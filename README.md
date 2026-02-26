@@ -1,6 +1,25 @@
-# LinkSaved Simple
+# LinkSaved
 
-Projeto Node.js minimalista para renderizar uma tela web simples.
+## Como usar com Docker
+
+1. Instale o Docker e o Docker Compose.
+2. No diretório do projeto, execute:
+
+```
+docker compose up --build -d
+```
+
+3. Acesse http://localhost:3000 no navegador.
+
+## Visualizando a estrutura do projeto
+
+Para ver a estrutura de arquivos, execute:
+
+```
+tree
+```
+
+Isso mostrará todos os arquivos e pastas do projeto.
 
 ## Como rodar
 
@@ -36,4 +55,3 @@ Acesse http://localhost:3000 no navegador.
 - docker-compose.yml
 
 Pronto para adicionar novas dependências via npm ou rodar de forma otimizada com Docker.
-# Guardiao-de-Links

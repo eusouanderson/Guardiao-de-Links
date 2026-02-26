@@ -1,0 +1,16 @@
+{
+  "name": "linksaved-simple",
+  "version": "1.0.0",
+  "description": "Projeto Node.js minimalista para renderizar uma tela web simples.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  }
+}

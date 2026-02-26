@@ -1,0 +1,11 @@
+services:
+  linksaved:
+    build: .
+    ports:
+      - '8000:8000'
+    volumes:
+      - .:/app
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    command: node server.js

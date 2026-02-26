@@ -1,0 +1,46 @@
+[
+  {
+    "name": "Figma Fluxo Adesão",
+    "url": "https://www.figma.com/design/pJqLulFTX8Y7EdQhHsGuvM/Fluxo-de-Ades%C3%A3o?node-id=1888-23305&t=1Y1GpmNxlO2ww9GU-0"
+  },
+  {
+    "name": "Comerc Mock",
+    "url": "http://localhost:3333/__admin"
+  },
+  {
+    "name": "Sonar",
+    "url": "https://sonar.comerc.com.br/projects"
+  },
+  {
+    "name": "Kumospace",
+    "url": "https://www.kumospace.com/comerc?utm_campaign=User+Invitation+Email&utm_content=Member+Invitation+Email&utm_medium=email_action&utm_source=customer.io"
+  },
+  {
+    "name": "Curso Ts",
+    "url": "https://www.youtube.com/watch?v=YwtudT9ji0A&list=PL9tY_tDo_Q0DOAzTaPnWYsryfNLsz1K6U&index=7"
+  },
+  {
+    "name": "Doc OpenAPi",
+    "url": "http://localhost:7071/"
+  },
+  {
+    "name": "Emojis",
+    "url": "https://emojiterra.com/pt/"
+  },
+  {
+    "name": "OS",
+    "url": "https://protheus-os.comerc.com.br:8850/webapp/"
+  },
+  {
+    "name": "Design System",
+    "url": "https://ds.dmcview.com.br/?path=/docs/pagina-inicial--docs"
+  },
+  {
+    "name": "Repositórios DMC",
+    "url": "https://bitbucket.org/doc88_dev/workspace/repositories"
+  },
+  {
+    "name": "DMC Jira",
+    "url": "https://comerc.atlassian.net/jira/software/projects/DMCS/boards/248"
+  }
+]

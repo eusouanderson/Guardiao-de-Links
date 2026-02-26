@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--Link da pagina-->
+    <link rel="icon" href="link-da-web.png" type="image/x-icon" />
+    <title>Guardião de Links</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          'Inter',
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 600px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 24px;
+        padding: 2rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        animation: slideUp 0.5s ease-out;
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: -0.025em;
+      }
+
+      .form-group {
+        position: relative;
+        margin-bottom: 1rem;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 1rem 1.25rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 16px;
+        font-size: 1rem;
+        font-family: 'Inter', sans-serif;
+        transition: all 0.2s ease;
+        background: white;
+        outline: none;
+      }
+
+      .form-group input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+      }
+
+      .form-group input::placeholder {
+        color: #9ca3af;
+        font-weight: 300;
+      }
+
+      button[type='submit'] {
+        width: 100%;
+        padding: 1rem;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border: none;
+        border-radius: 16px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-top: 0.5rem;
+        box-shadow: 0 4px 6px -1px rgba(102, 126, 234, 0.2);
+      }
+
+      button[type='submit']:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(102, 126, 234, 0.3);
+      }
+
+      button[type='submit']:active {
+        transform: translateY(0);
+      }
+
+      .search-container {
+        position: relative;
+        margin: 2rem 0;
+      }
+
+      .search-container::before {
+        content: '🔍';
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1rem;
+        opacity: 0.5;
+      }
+
+      #searchInput {
+        width: 100%;
+        padding: 1rem 1rem 1rem 3rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 16px;
+        font-size: 1rem;
+        font-family: 'Inter', sans-serif;
+        transition: all 0.2s ease;
+        background: white;
+      }
+
+      #searchInput:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        outline: none;
+      }
+
+      .links-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+
+      .links-header h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #374151;
+      }
+
+      .link-count {
+        background: #e5e7eb;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #4b5563;
+      }
+
+      #linksList {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        max-height: 400px;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+      }
+
+      #linksList::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      #linksList::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+      }
+
+      #linksList::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 10px;
+      }
+
+      .link-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem;
+        background: #f9fafb;
+        border-radius: 16px;
+        transition: all 0.2s ease;
+        border: 2px solid transparent;
+        animation: fadeIn 0.3s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateX(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      .link-item:hover {
+        border-color: #667eea;
+        background: white;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+      }
+
+      .favicon-container {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .favicon-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        background: white;
+      }
+
+      .favicon-container .favicon-placeholder {
+        color: white;
+        font-size: 1.25rem;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .link-info {
+        flex: 1;
+      }
+
+      .link-info a {
+        font-weight: 600;
+        color: #1f2937;
+        text-decoration: none;
+        font-size: 1rem;
+        display: block;
+        margin-bottom: 0.25rem;
+        transition: color 0.2s ease;
+      }
+
+      .link-info a:hover {
+        color: #667eea;
+      }
+
+      .link-url-preview {
+        font-size: 0.75rem;
+        color: #6b7280;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .delete-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: #fee2e2;
+        color: #ef4444;
+        border: none;
+        font-size: 1.25rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 0.5rem;
+      }
+
+      .delete-btn:hover {
+        background: #ef4444;
+        color: white;
+        transform: scale(1.05);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #9ca3af;
+        background: #f9fafb;
+        border-radius: 16px;
+        border: 2px dashed #e5e7eb;
+      }
+
+      .empty-state p {
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+      }
+
+      .empty-state .emoji {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+      }
+
+      @media (max-width: 640px) {
+        body {
+          padding: 0.75rem;
+        }
+
+        .container {
+          padding: 1.5rem;
+        }
+
+        h1 {
+          font-size: 1.75rem;
+        }
+
+        .link-url-preview {
+          max-width: 150px;
+        }
+      }
+
+      @media (max-width: 380px) {
+        .link-url-preview {
+          max-width: 100px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>⚡ Guardião de Links</h1>
+
+      <form id="linkForm">
+        <div class="form-group">
+          <input type="text" id="linkName" placeholder="Nome do link" required />
+        </div>
+        <div class="form-group">
+          <input
+            type="url"
+            id="linkUrl"
+            placeholder="URL do link (ex: https://exemplo.com)"
+            required
+          />
+        </div>
+        <button type="submit">✨ Salvar Link</button>
+      </form>
+
+      <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Buscar links..." />
+      </div>
+
+      <div class="links-header">
+        <h2>📌 Seus Links</h2>
+        <span class="link-count" id="linkCount">0</span>
+      </div>
+
+      <div id="linksList"></div>
+    </div>
+
+    <script>
+      async function fetchLinks() {
+        const res = await fetch('/links');
+        return res.json();
+      }
+
+      function getFavicon(url) {
+        try {
+          const u = new URL(url);
+          return `${u.origin}/favicon.ico`;
+        } catch {
+          return '';
+        }
+      }
+
+      function getDomainFromUrl(url) {
+        try {
+          const u = new URL(url);
+          return u.hostname.replace('www.', '');
+        } catch {
+          return 'link';
+        }
+      }
+
+      function renderLinks(links, search = '') {
+        const list = document.getElementById('linksList');
+        const linkCount = document.getElementById('linkCount');
+
+        // Filtro de busca
+        const searchTerms = search.toLowerCase().split(/\s+/).filter(Boolean);
+        const filtered = links.filter((l) => {
+          const name = l.name.toLowerCase();
+          const url = l.url.toLowerCase();
+          return searchTerms.every((term) => name.includes(term) || url.includes(term));
+        });
+
+        // Atualizar contador
+        linkCount.textContent = filtered.length;
+
+        if (filtered.length === 0) {
+          list.innerHTML = `
+          <div class="empty-state">
+            <div class="emoji">🔍</div>
+            <p>Nenhum link encontrado</p>
+            ${links.length === 0 ? '<p>Adicione seu primeiro link acima! ✨</p>' : ''}
+          </div>
+        `;
+          return;
+        }
+
+        list.innerHTML = '';
+
+        filtered.forEach((link) => {
+          const div = document.createElement('div');
+          div.className = 'link-item';
+
+          const faviconContainer = document.createElement('div');
+          faviconContainer.className = 'favicon-container';
+
+          const img = document.createElement('img');
+          img.src = getFavicon(link.url);
+          img.onerror = () => {
+            faviconContainer.innerHTML = `<span class="favicon-placeholder">${link.name.charAt(0).toUpperCase()}</span>`;
+          };
+
+          if (!img.onerror) {
+            faviconContainer.appendChild(img);
+          } else {
+            faviconContainer.innerHTML = `<span class="favicon-placeholder">${link.name.charAt(0).toUpperCase()}</span>`;
+          }
+
+          const linkInfo = document.createElement('div');
+          linkInfo.className = 'link-info';
+
+          const a = document.createElement('a');
+          a.href = link.url;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.textContent = link.name;
+
+          const urlPreview = document.createElement('div');
+          urlPreview.className = 'link-url-preview';
+          urlPreview.textContent = getDomainFromUrl(link.url);
+
+          linkInfo.appendChild(a);
+          linkInfo.appendChild(urlPreview);
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'delete-btn';
+          delBtn.innerHTML = '🗑️';
+          delBtn.title = 'Apagar link';
+          delBtn.onclick = async () => {
+            if (confirm('Deseja apagar este link?')) {
+              try {
+                await fetch('/links', {
+                  method: 'DELETE',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ url: link.url })
+                });
+                links = await fetchLinks();
+                renderLinks(links, document.getElementById('searchInput').value);
+              } catch (error) {
+                console.error('Erro ao apagar link:', error);
+              }
+            }
+          };
+
+          div.appendChild(faviconContainer);
+          div.appendChild(linkInfo);
+          div.appendChild(delBtn);
+          list.appendChild(div);
+        });
+      }
+
+      // Inicialização
+      let links = [];
+      fetchLinks()
+        .then((data) => {
+          links = data;
+          renderLinks(links);
+        })
+        .catch(() => {
+          // Fallback para demonstração caso não haja servidor
+          links = [];
+          renderLinks(links);
+        });
+
+      // Event Listeners
+      document.getElementById('linkForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('linkName').value.trim();
+        const url = document.getElementById('linkUrl').value.trim();
+
+        if (!name || !url) return;
+
+        // Validação básica de URL
+        try {
+          new URL(url);
+        } catch {
+          alert('Por favor, insira uma URL válida (incluindo http:// ou https://)');
+          return;
+        }
+
+        try {
+          await fetch('/links', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, url })
+          });
+          links = await fetchLinks();
+          renderLinks(links, document.getElementById('searchInput').value);
+          e.target.reset();
+        } catch (error) {
+          console.error('Erro ao salvar link:', error);
+        }
+      });
+
+      document.getElementById('searchInput').addEventListener('input', (e) => {
+        renderLinks(links, e.target.value);
+      });
+    </script>
+  </body>
+</html>
