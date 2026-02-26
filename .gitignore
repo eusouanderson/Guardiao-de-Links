@@ -1,0 +1,13 @@
+node_modules/
+.env
+*.log
+
+# Ignore build and dependency files
+pnpm-lock.yaml
+
+# Ignore Docker artifacts
+*.pid
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
