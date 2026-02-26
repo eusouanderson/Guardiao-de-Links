@@ -9,7 +9,7 @@
 docker compose up --build -d
 ```
 
-3. Acesse http://localhost:3000 no navegador.
+3. Acesse http://localhost:8000 no navegador.
 
 ## Visualizando a estrutura do projeto
 
