@@ -42,5 +42,29 @@
   {
     "name": "DMC Jira",
     "url": "https://comerc.atlassian.net/jira/software/projects/DMCS/boards/248"
+  },
+  {
+    "name": "Figma Fluxo Adesão Parceiro",
+    "url": "https://www.figma.com/proto/lpd9GxWQOAJ085UhRtfokZ/Assinatura-solar---Parceiro?node-id=4352-23241&starting-point-node-id=4352%3A23241&scaling=contain&content-scaling=responsive"
+  },
+  {
+    "name": "Parceiro Figma",
+    "url": "https://www.figma.com/design/EWAcsrLkmtsslEc2eWLMpi/Assinatura-solar---Parceiro?node-id=4352-23240&t=vkJtIKYeb5k6EjVZ-0"
+  },
+  {
+    "name": "The Internet",
+    "url": "https://the-internet.herokuapp.com/"
+  },
+  {
+    "name": "Vue Animations",
+    "url": "https://madewithvuejs.com/c/loading-animations#:~:text=Loading%20Spinners%2C%20Skeleton%20Cards%2C%20Loading,Vue%20Loading%20Loading%20Indicator"
+  },
+  {
+    "name": "SharkBench",
+    "url": "https://sharkbench.dev/web"
+  },
+  {
+    "name": "DCMVIEW PROD",
+    "url": "https://dmcview.assinaturasolar.comerc.com.br/l"
   }
 ]

@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="link-da-web.png" type="image/png" />
+  <title>Guardiao de Estudos</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family:
+        'Inter',
+        -apple-system,
+        BlinkMacSystemFont,
+        sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 760px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 24px;
+      padding: 2rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      animation: slideUp 0.5s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: -0.025em;
+    }
+
+    .subtitle {
+      color: #6b7280;
+      margin-bottom: 1.25rem;
+      line-height: 1.5;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 110px;
+      padding: 1rem 1.25rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 16px;
+      font-size: 1rem;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.2s ease;
+      background: white;
+      outline: none;
+      resize: vertical;
+    }
+
+    textarea:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    .actions {
+      margin-top: 0.85rem;
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 0.8rem 1rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    #saveThemeBtn {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      box-shadow: 0 4px 6px -1px rgba(102, 126, 234, 0.2);
+    }
+
+    #saveThemeBtn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(102, 126, 234, 0.3);
+    }
+
+    #refreshExplainBtn {
+      background: #f3f4f6;
+      color: #374151;
+      border: 2px solid #e5e7eb;
+    }
+
+    #refreshExplainBtn:hover {
+      border-color: #667eea;
+      color: #667eea;
+      background: white;
+    }
+
+    #status {
+      margin-top: 0.75rem;
+      font-size: 0.95rem;
+      color: #4b5563;
+    }
+
+    .result-card {
+      margin-top: 1.25rem;
+      background: #f9fafb;
+      border: 2px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 1rem;
+    }
+
+    .result-card h2 {
+      font-size: 1.15rem;
+      margin-bottom: 0.75rem;
+      color: #374151;
+    }
+
+    #result {
+      white-space: pre-wrap;
+      line-height: 1.6;
+      color: #1f2937;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-top: 1.25rem;
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 0.75rem;
+      }
+
+      .container {
+        padding: 1.5rem;
+      }
+
+      h1 {
+        font-size: 1.75rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>📚 Guardiao de Estudos</h1>
+    <p class="subtitle">
+      Salve um prompt com os temas que quer estudar. Sempre que abrir esta pagina, a IA explica o tema salvo.
+    </p>
+
+    <textarea id="themeInput"
+      placeholder="Ex.: quimica organica, regra de tres, idade media e revolucao francesa"></textarea>
+
+    <div class="actions">
+      <button id="saveThemeBtn" type="button">Salvar temas</button>
+      <button id="refreshExplainBtn" type="button">Atualizar explicacao</button>
+    </div>
+
+    <div id="status">Carregando tema salvo...</div>
+
+    <div class="result-card">
+      <h2>Explicacao da IA</h2>
+      <div id="result">Aguardando resposta...</div>
+    </div>
+
+    <a class="back-link" href="/">← Voltar para Guardiao de Links</a>
+  </div>
+
+  <script>
+    const themeInput = document.getElementById('themeInput');
+    const statusEl = document.getElementById('status');
+    const resultEl = document.getElementById('result');
+    const saveThemeBtn = document.getElementById('saveThemeBtn');
+    const refreshExplainBtn = document.getElementById('refreshExplainBtn');
+
+    async function loadSavedTheme() {
+      const response = await fetch('/study-theme');
+      const data = await response.json();
+      if (data.prompt) {
+        themeInput.value = data.prompt;
+        statusEl.textContent = `Tema salvo em: ${new Date(data.updatedAt).toLocaleString()}`;
+      } else {
+        statusEl.textContent = 'Nenhum tema salvo ainda.';
+      }
+    }
+
+    async function saveTheme() {
+      const prompt = themeInput.value.trim();
+      if (!prompt) {
+        statusEl.textContent = 'Digite ao menos um tema para salvar.';
+        return;
+      }
+
+      statusEl.textContent = 'Salvando tema...';
+      const response = await fetch('/study-theme', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        statusEl.textContent = data.error || 'Erro ao salvar tema.';
+        return;
+      }
+
+      statusEl.textContent = `Tema salvo em: ${new Date(data.data.updatedAt).toLocaleString()}`;
+    }
+
+    async function fetchExplanation() {
+      resultEl.textContent = 'Consultando IA...';
+      const response = await fetch('/study-explain');
+      const data = await response.json();
+
+      if (!response.ok) {
+        resultEl.textContent = data.error ? `${data.error}\n${data.details || ''}` : 'Erro ao consultar IA.';
+        return;
+      }
+
+      resultEl.textContent = data.explanation;
+    }
+
+    saveThemeBtn.addEventListener('click', async () => {
+      try {
+        await saveTheme();
+        await fetchExplanation();
+      } catch (err) {
+        statusEl.textContent = `Erro: ${err.message}`;
+      }
+    });
+
+    refreshExplainBtn.addEventListener('click', async () => {
+      try {
+        await fetchExplanation();
+      } catch (err) {
+        resultEl.textContent = `Erro: ${err.message}`;
+      }
+    });
+
+    (async function init() {
+      try {
+        await loadSavedTheme();
+        await fetchExplanation();
+      } catch (err) {
+        statusEl.textContent = `Erro ao iniciar: ${err.message}`;
+      }
+    })();
+  </script>
+</body>
+
+</html>

@@ -8,4 +8,4 @@ services:
     environment:
       - NODE_ENV=production
     restart: unless-stopped
-    command: node server.js
+    command: node src/server.js
