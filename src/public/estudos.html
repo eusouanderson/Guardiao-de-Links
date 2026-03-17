@@ -117,6 +117,13 @@
       box-shadow: 0 10px 15px -3px rgba(102, 126, 234, 0.3);
     }
 
+    #saveThemeBtn:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+      transform: none;
+      box-shadow: none;
+    }
+
     #refreshExplainBtn {
       background: #f3f4f6;
       color: #374151;
@@ -237,6 +244,42 @@
       text-decoration: underline;
     }
 
+    #toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: 16px;
+      font-weight: 600;
+      font-size: 1rem;
+      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+      transform: translateY(6rem);
+      opacity: 0;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 1000;
+      max-width: 340px;
+      pointer-events: none;
+    }
+
+    #toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .completion-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      margin-left: 0.5rem;
+      vertical-align: middle;
+    }
+
     @media (max-width: 640px) {
       body {
         padding: 0.75rem;
@@ -287,6 +330,8 @@
     <a class="back-link" href="/">← Voltar para Guardiao de Links</a>
   </div>
 
+  <div id="toast"></div>
+
   <script>
     const themeInput = document.getElementById('themeInput');
     const statusEl = document.getElementById('status');
@@ -295,11 +340,31 @@
     const quizListEl = document.getElementById('quizList');
     const saveThemeBtn = document.getElementById('saveThemeBtn');
     const loadStudyBtn = document.getElementById('loadStudyBtn');
+    const toastEl = document.getElementById('toast');
     let currentSession = null;
+    let toastTimer = null;
+
+    function showToast(message) {
+      if (toastTimer) clearTimeout(toastTimer);
+      toastEl.textContent = message;
+      toastEl.classList.add('show');
+      toastTimer = setTimeout(() => {
+        toastEl.classList.remove('show');
+      }, 5000);
+    }
+
+    function updateSaveThemeState(status) {
+      const canSave = Boolean(status?.canSaveNewTheme ?? true);
+      saveThemeBtn.disabled = !canSave;
+      saveThemeBtn.title = canSave
+        ? 'Salvar um novo tema de estudo'
+        : 'Finalize as 10 perguntas atuais para liberar um novo tema';
+    }
 
     async function loadSavedTheme() {
       const response = await fetch('/study-theme');
       const data = await response.json();
+      updateSaveThemeState(data.status);
       if (data.prompt) {
         themeInput.value = data.prompt;
         statusEl.textContent = `Tema salvo em: ${new Date(data.updatedAt).toLocaleString()}`;
@@ -310,14 +375,19 @@
 
     function renderProgress(session) {
       if (!session || !session.progress.totalQuestions) {
-        progressCardEl.textContent = 'Nenhum ciclo de estudo ativo.';
+        progressCardEl.innerHTML = 'Nenhum ciclo de estudo ativo.';
         return;
       }
 
       const { correctCount, totalQuestions, completed } = session.progress;
-      progressCardEl.textContent = completed
-        ? `Ciclo concluido: ${correctCount}/${totalQuestions} perguntas corretas. Ao carregar de novo, a IA gera um novo estudo.`
-        : `Voce acertou ${correctCount} de ${totalQuestions} perguntas. O estudo continua salvo em cache ate fechar as 10.`;
+      const count = session.completionCount || 0;
+      const badgeHtml = count > 0
+        ? `<span class="completion-badge">🏆 ${count} ciclo${count > 1 ? 's' : ''} concluido${count > 1 ? 's' : ''}</span>`
+        : '';
+
+      progressCardEl.innerHTML = completed
+        ? `Ciclo concluido: ${correctCount}/${totalQuestions} perguntas corretas.${badgeHtml} Ao carregar de novo, a IA gera um novo estudo.`
+        : `Voce acertou ${correctCount} de ${totalQuestions} perguntas.${badgeHtml} O estudo continua salvo em cache ate fechar as 10.`;
     }
 
     function renderQuiz(session) {
@@ -378,6 +448,7 @@
 
     function renderSession(session) {
       currentSession = session;
+      updateSaveThemeState({ canSaveNewTheme: session?.progress?.completed ?? true });
       resultEl.textContent = session?.explanation || 'Aguardando resposta...';
       renderProgress(session);
       renderQuiz(session);
@@ -403,6 +474,7 @@
         return;
       }
 
+      updateSaveThemeState(data.data.status);
       statusEl.textContent = `Tema salvo em: ${new Date(data.data.updatedAt).toLocaleString()}`;
     }
 
@@ -422,6 +494,7 @@
 
     async function answerQuestion(questionId, optionIndex) {
       statusEl.textContent = 'Validando resposta...';
+      const wasCompleted = currentSession?.progress?.completed;
       const response = await fetch('/study-answer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -434,10 +507,18 @@
         return;
       }
 
+      const justCompleted = !wasCompleted && data.session?.progress?.completed;
       renderSession(data.session);
-      statusEl.textContent = data.correct
-        ? 'Resposta correta. Prossiga para a proxima.'
-        : 'Resposta incorreta. Revise a explicacao e tente novamente.';
+
+      if (justCompleted) {
+        const count = data.session.completionCount || 1;
+        showToast(`🎉 Parabens! Voce concluiu ${count} ciclo${count > 1 ? 's' : ''} de estudo!`);
+        statusEl.textContent = 'Ciclo concluido! Todas as 10 respostas corretas. Carregue para gerar um novo.';
+      } else {
+        statusEl.textContent = data.correct
+          ? 'Resposta correta. Prossiga para a proxima.'
+          : 'Resposta incorreta. Revise a explicacao e tente novamente.';
+      }
     }
 
     saveThemeBtn.addEventListener('click', async () => {

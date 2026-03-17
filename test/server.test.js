@@ -148,9 +148,57 @@ test('POST /study-theme saves the study prompt', async () => {
 
     assert.equal(response.status, 200);
     assert.equal(payload.success, true);
+    assert.equal(payload.data.status.canSaveNewTheme, false);
     assert.equal(savedTheme.prompt, 'event loop e promises');
     assert.ok(savedTheme.updatedAt);
     assert.equal(savedTheme.lesson, null);
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /study-theme is blocked while there is a pending study cycle', async () => {
+  const server = await startTestServer();
+
+  try {
+    await fs.writeFile(
+      server.fixture.studyFilePath,
+      JSON.stringify(
+        {
+          prompt: 'event loop',
+          updatedAt: '2026-03-17T00:00:00.000Z',
+          lesson: {
+            promptSnapshot: 'event loop',
+            explanation: 'Resumo salvo.',
+            questions: Array.from({ length: 10 }, (_, index) => ({
+              id: index + 1,
+              question: `Pergunta ${index + 1}?`,
+              options: ['A', 'B', 'C', 'D'],
+              correctOptionIndex: 1,
+              solved: index < 3,
+              selectedOptionIndex: index < 3 ? 1 : null
+            })),
+            correctCount: 3,
+            completed: false,
+            generatedAt: '2026-03-17T00:00:00.000Z'
+          }
+        },
+        null,
+        2
+      )
+    );
+
+    const response = await fetch(`${server.baseUrl}/study-theme`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'novo tema' })
+    });
+    const payload = await response.json();
+    const savedTheme = JSON.parse(await fs.readFile(server.fixture.studyFilePath, 'utf8'));
+
+    assert.equal(response.status, 409);
+    assert.match(payload.error, /Finalize as 10 perguntas/);
+    assert.equal(savedTheme.prompt, 'event loop');
   } finally {
     await server.close();
   }

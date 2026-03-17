@@ -58,7 +58,8 @@ const writeJsonFile = async (filePath, payload) => {
 const createEmptyStudyState = () => ({
   prompt: '',
   updatedAt: null,
-  lesson: null
+  lesson: null,
+  completionCount: 0
 });
 
 const normalizeQuestion = (question, index) => {
@@ -116,7 +117,8 @@ const normalizeStudyState = (parsed) => {
   return {
     prompt: typeof parsed.prompt === 'string' ? parsed.prompt : '',
     updatedAt: parsed.updatedAt || null,
-    lesson: normalizeLesson(parsed.lesson)
+    lesson: normalizeLesson(parsed.lesson),
+    completionCount: Number.isInteger(parsed.completionCount) ? parsed.completionCount : 0
   };
 };
 
@@ -141,7 +143,8 @@ const buildSessionPayload = (studyState) => {
       correctCount,
       totalQuestions,
       completed: Boolean(lesson?.completed)
-    }
+    },
+    completionCount: studyState.completionCount || 0
   };
 };
 
@@ -177,7 +180,7 @@ const createApp = (options = {}) => {
   const publicDir = options.publicDir || DEFAULT_PUBLIC_DIR;
   const linksFilePath = options.linksFilePath || DEFAULT_LINKS_FILE_PATH;
   const studyFilePath = options.studyFilePath || DEFAULT_STUDY_FILE_PATH;
-  const groqModel = options.groqModel || process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+  const groqModel = options.groqModel || process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
   const fetchImpl = options.fetchImpl || fetch;
 
   const serveHtml = async (res, fileName) => {
@@ -332,8 +335,10 @@ const createApp = (options = {}) => {
     return {
       hasPrompt,
       pendingStudy,
+      canSaveNewTheme: !pendingStudy,
       prompt: studyState.prompt,
       updatedAt: studyState.updatedAt,
+      completionCount: studyState.completionCount || 0,
       progress: {
         correctCount,
         totalQuestions,
@@ -375,9 +380,18 @@ const createApp = (options = {}) => {
         const body = await readRequestBody(req);
         const parsed = JSON.parse(body || '{}');
         const prompt = typeof parsed.prompt === 'string' ? parsed.prompt.trim() : '';
+        const currentState = await readStudyState();
+        const currentStatus = getStudyStatus(currentState);
 
         if (!prompt) {
           sendJson(res, 400, { error: 'Informe um tema para estudo.' });
+          return;
+        }
+
+        if (!currentStatus.canSaveNewTheme) {
+          sendJson(res, 409, {
+            error: 'Finalize as 10 perguntas do estudo atual antes de salvar um novo tema.'
+          });
           return;
         }
 
@@ -479,8 +493,14 @@ const createApp = (options = {}) => {
         }
 
         studyState.lesson.correctCount = countCorrectAnswers(studyState.lesson.questions);
+        const justCompleted = !studyState.lesson.completed &&
+          studyState.lesson.correctCount === studyState.lesson.questions.length;
         studyState.lesson.completed =
           studyState.lesson.correctCount === studyState.lesson.questions.length;
+
+        if (justCompleted) {
+          studyState.completionCount = (studyState.completionCount || 0) + 1;
+        }
 
         await writeStudyState(studyState);
 
