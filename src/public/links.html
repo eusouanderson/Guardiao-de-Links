@@ -138,6 +138,31 @@
       transform: translateY(-2px);
     }
 
+    .study-alert {
+      display: none;
+      margin: 0 0 1.25rem;
+      padding: 1rem;
+      border-radius: 16px;
+      background: #eef2ff;
+      border: 2px solid #c7d2fe;
+      color: #3730a3;
+    }
+
+    .study-alert strong {
+      display: block;
+      margin-bottom: 0.35rem;
+    }
+
+    .study-alert a {
+      color: #4338ca;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .study-alert a:hover {
+      text-decoration: underline;
+    }
+
     .search-container {
       position: relative;
       margin: 2rem 0;
@@ -370,6 +395,12 @@
   <div class="container">
     <h1>⚡ Guardião de Links</h1>
 
+    <div id="studyAlert" class="study-alert">
+      <strong>Voce precisa estudar</strong>
+      <span id="studyAlertText"></span>
+      <div><a href="/estudos">Abrir area de estudos</a></div>
+    </div>
+
     <form id="linkForm">
       <div class="form-group">
         <input type="text" id="linkName" placeholder="Nome do link" required />
@@ -394,9 +425,30 @@
   </div>
 
   <script>
+    async function fetchStudyStatus() {
+      const res = await fetch('/study-status');
+      return res.json();
+    }
+
     async function fetchLinks() {
       const res = await fetch('/links');
       return res.json();
+    }
+
+    function renderStudyAlert(status) {
+      const alert = document.getElementById('studyAlert');
+      const text = document.getElementById('studyAlertText');
+
+      if (!status.hasPrompt || !status.pendingStudy) {
+        alert.style.display = 'none';
+        return;
+      }
+
+      const { correctCount, totalQuestions } = status.progress;
+      text.textContent = correctCount > 0 || totalQuestions > 0
+        ? `Voce tem um ciclo pendente sobre "${status.prompt}". Progresso: ${correctCount}/${totalQuestions} perguntas corretas.`
+        : `Voce tem um tema salvo sobre "${status.prompt}" aguardando estudo.`;
+      alert.style.display = 'block';
     }
 
     function getFavicon(url) {
@@ -506,6 +558,14 @@
     }
 
     let links = [];
+    fetchStudyStatus()
+      .then((status) => {
+        renderStudyAlert(status);
+      })
+      .catch(() => {
+        renderStudyAlert({ hasPrompt: false, pendingStudy: false, progress: {} });
+      });
+
     fetchLinks()
       .then((data) => {
         links = data;

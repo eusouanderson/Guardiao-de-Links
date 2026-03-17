@@ -1,4 +1,143 @@
 {
   "prompt": "Event Loop : Call Stack Callback Queue Microtasks vs Macrotasks setTimeout, Promise, async/await",
-  "updatedAt": "2026-03-17T20:55:36.394Z"
+  "updatedAt": "2026-03-17T20:55:36.394Z",
+  "lesson": {
+    "promptSnapshot": "Event Loop : Call Stack Callback Queue Microtasks vs Macrotasks setTimeout, Promise, async/await",
+    "explanation": "O Event Loop é um mecanismo fundamental no JavaScript que gerencia a execução de tarefas de forma assíncrona. Ele é responsável por executar as tarefas na ordem correta, garantindo que o código seja executado de forma eficiente e sem bloqueios. O Event Loop é composto por três principais componentes: Call Stack, Callback Queue e Microtasks. O Call Stack é uma pilha que armazena as funções que estão sendo executadas no momento. A Callback Queue é uma fila que armazena as funções que devem ser executadas após a conclusão de uma tarefa. As Microtasks são tarefas pequenas que devem ser executadas imediatamente após a conclusão de uma tarefa, como a resolução de Promises. Já as Macrotasks são tarefas maiores que devem ser executadas após a conclusão de todas as Microtasks, como o código dentro de um setTimeout. O Event Loop também é responsável por gerenciar as Promises e o async/await, garantindo que as tarefas sejam executadas na ordem correta.",
+    "questions": [
+      {
+        "id": 1,
+        "question": "O que é o Event Loop no JavaScript?",
+        "options": [
+          "Um mecanismo de cache",
+          "Um mecanismo de gerenciamento de memória",
+          "Um mecanismo de execução de tarefas assíncronas",
+          "Um mecanismo de segurança"
+        ],
+        "correctOptionIndex": 2,
+        "solved": true,
+        "selectedOptionIndex": 2
+      },
+      {
+        "id": 2,
+        "question": "Qual é o componente do Event Loop que armazena as funções que estão sendo executadas no momento?",
+        "options": [
+          "Callback Queue",
+          "Call Stack",
+          "Microtasks",
+          "Macrotasks"
+        ],
+        "correctOptionIndex": 1,
+        "solved": false,
+        "selectedOptionIndex": null
+      },
+      {
+        "id": 3,
+        "question": "O que é a Callback Queue no Event Loop?",
+        "options": [
+          "Uma pilha que armazena as funções que estão sendo executadas",
+          "Uma fila que armazena as funções que devem ser executadas após a conclusão de uma tarefa",
+          "Uma lista que armazena as funções que devem ser executadas imediatamente",
+          "Uma árvore que armazena as funções que devem ser executadas"
+        ],
+        "correctOptionIndex": 1,
+        "solved": false,
+        "selectedOptionIndex": null
+      },
+      {
+        "id": 4,
+        "question": "O que são Microtasks no Event Loop?",
+        "options": [
+          "Tarefas pequenas que devem ser executadas imediatamente após a conclusão de uma tarefa",
+          "Tarefas maiores que devem ser executadas após a conclusão de todas as Microtasks",
+          "Tarefas que devem ser executadas em paralelo",
+          "Tarefas que devem ser executadas em série"
+        ],
+        "correctOptionIndex": 0,
+        "solved": false,
+        "selectedOptionIndex": null
+      },
+      {
+        "id": 5,
+        "question": "O que são Macrotasks no Event Loop?",
+        "options": [
+          "Tarefas pequenas que devem ser executadas imediatamente após a conclusão de uma tarefa",
+          "Tarefas maiores que devem ser executadas após a conclusão de todas as Microtasks",
+          "Tarefas que devem ser executadas em paralelo",
+          "Tarefas que devem ser executadas em série"
+        ],
+        "correctOptionIndex": 1,
+        "solved": false,
+        "selectedOptionIndex": null
+      },
+      {
+        "id": 6,
+        "question": "Qual é o propósito do setTimeout no Event Loop?",
+        "options": [
+          "Executar uma tarefa imediatamente",
+          "Executar uma tarefa após um determinado tempo",
+          "Executar uma tarefa em paralelo",
+          "Executar uma tarefa em série"
+        ],
+        "correctOptionIndex": 1,
+        "solved": false,
+        "selectedOptionIndex": null
+      },
+      {
+        "id": 7,
+        "question": "Como as Promises são gerenciadas no Event Loop?",
+        "options": [
+          "São executadas imediatamente",
+          "São executadas após a conclusão de todas as Microtasks",
+          "São executadas após a conclusão de todas as Macrotasks",
+          "São executadas em paralelo"
+        ],
+        "correctOptionIndex": 1,
+        "solved": false,
+        "selectedOptionIndex": null
+      },
+      {
+        "id": 8,
+        "question": "Qual é o propósito do async/await no Event Loop?",
+        "options": [
+          "Executar uma tarefa de forma síncrona",
+          "Executar uma tarefa de forma assíncrona",
+          "Executar uma tarefa em paralelo",
+          "Executar uma tarefa em série"
+        ],
+        "correctOptionIndex": 1,
+        "solved": false,
+        "selectedOptionIndex": null
+      },
+      {
+        "id": 9,
+        "question": "Em que ordem as tarefas são executadas no Event Loop?",
+        "options": [
+          "Microtasks, Macrotasks, Call Stack",
+          "Macrotasks, Microtasks, Call Stack",
+          "Call Stack, Microtasks, Macrotasks",
+          "Call Stack, Macrotasks, Microtasks"
+        ],
+        "correctOptionIndex": 2,
+        "solved": false,
+        "selectedOptionIndex": null
+      },
+      {
+        "id": 10,
+        "question": "Qual é o benefício do uso do Event Loop no JavaScript?",
+        "options": [
+          "Melhoria da performance",
+          "Redução da complexidade",
+          "Aumento da segurança",
+          "Simplificação do código"
+        ],
+        "correctOptionIndex": 0,
+        "solved": false,
+        "selectedOptionIndex": null
+      }
+    ],
+    "correctCount": 1,
+    "completed": false,
+    "generatedAt": "2026-03-17T21:12:21.787Z"
+  }
 }

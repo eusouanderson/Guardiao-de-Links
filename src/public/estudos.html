@@ -135,6 +135,16 @@
       color: #4b5563;
     }
 
+    .progress-card {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #eef2ff;
+      border: 2px solid #c7d2fe;
+      border-radius: 16px;
+      color: #3730a3;
+      font-weight: 600;
+    }
+
     .result-card {
       margin-top: 1.25rem;
       background: #f9fafb;
@@ -153,6 +163,66 @@
       white-space: pre-wrap;
       line-height: 1.6;
       color: #1f2937;
+    }
+
+    .quiz-list {
+      display: grid;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .question-card {
+      background: white;
+      border: 2px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 1rem;
+    }
+
+    .question-title {
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 0.85rem;
+    }
+
+    .options {
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .option-btn {
+      text-align: left;
+      background: #f8fafc;
+      color: #1f2937;
+      border: 2px solid #e5e7eb;
+    }
+
+    .option-btn:hover {
+      border-color: #667eea;
+      color: #4338ca;
+      background: #eef2ff;
+    }
+
+    .option-btn.correct {
+      background: #dcfce7;
+      border-color: #86efac;
+      color: #166534;
+    }
+
+    .option-btn.wrong {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      color: #991b1b;
+    }
+
+    .option-btn:disabled {
+      cursor: default;
+      opacity: 1;
+    }
+
+    .question-feedback {
+      margin-top: 0.8rem;
+      font-size: 0.92rem;
+      color: #4b5563;
     }
 
     .back-link {
@@ -187,7 +257,8 @@
   <div class="container">
     <h1>📚 Guardiao de Estudos</h1>
     <p class="subtitle">
-      Salve um prompt com os temas que quer estudar. Sempre que abrir esta pagina, a IA explica o tema salvo.
+      Salve um prompt com os temas que quer estudar. A IA gera a explicação e 10 perguntas. Esse estudo fica em cache
+      até você acertar todas.
     </p>
 
     <textarea id="themeInput"
@@ -195,14 +266,22 @@
 
     <div class="actions">
       <button id="saveThemeBtn" type="button">Salvar temas</button>
-      <button id="refreshExplainBtn" type="button">Atualizar explicacao</button>
+      <button id="loadStudyBtn" type="button">Carregar estudo</button>
     </div>
 
     <div id="status">Carregando tema salvo...</div>
+    <div id="progressCard" class="progress-card">Nenhum ciclo de estudo ativo.</div>
 
     <div class="result-card">
       <h2>Explicacao da IA</h2>
       <div id="result">Aguardando resposta...</div>
+    </div>
+
+    <div class="result-card">
+      <h2>Quiz de Revisao</h2>
+      <div id="quizList" class="quiz-list">
+        <div class="question-feedback">As perguntas vao aparecer aqui quando o estudo for carregado.</div>
+      </div>
     </div>
 
     <a class="back-link" href="/">← Voltar para Guardiao de Links</a>
@@ -211,9 +290,12 @@
   <script>
     const themeInput = document.getElementById('themeInput');
     const statusEl = document.getElementById('status');
+    const progressCardEl = document.getElementById('progressCard');
     const resultEl = document.getElementById('result');
+    const quizListEl = document.getElementById('quizList');
     const saveThemeBtn = document.getElementById('saveThemeBtn');
-    const refreshExplainBtn = document.getElementById('refreshExplainBtn');
+    const loadStudyBtn = document.getElementById('loadStudyBtn');
+    let currentSession = null;
 
     async function loadSavedTheme() {
       const response = await fetch('/study-theme');
@@ -224,6 +306,81 @@
       } else {
         statusEl.textContent = 'Nenhum tema salvo ainda.';
       }
+    }
+
+    function renderProgress(session) {
+      if (!session || !session.progress.totalQuestions) {
+        progressCardEl.textContent = 'Nenhum ciclo de estudo ativo.';
+        return;
+      }
+
+      const { correctCount, totalQuestions, completed } = session.progress;
+      progressCardEl.textContent = completed
+        ? `Ciclo concluido: ${correctCount}/${totalQuestions} perguntas corretas. Ao carregar de novo, a IA gera um novo estudo.`
+        : `Voce acertou ${correctCount} de ${totalQuestions} perguntas. O estudo continua salvo em cache ate fechar as 10.`;
+    }
+
+    function renderQuiz(session) {
+      if (!session || !session.questions.length) {
+        quizListEl.innerHTML = '<div class="question-feedback">As perguntas vao aparecer aqui quando o estudo for carregado.</div>';
+        return;
+      }
+
+      quizListEl.innerHTML = '';
+
+      session.questions.forEach((question) => {
+        const card = document.createElement('div');
+        card.className = 'question-card';
+
+        const title = document.createElement('div');
+        title.className = 'question-title';
+        title.textContent = `${question.id}. ${question.question}`;
+        card.appendChild(title);
+
+        const options = document.createElement('div');
+        options.className = 'options';
+
+        question.options.forEach((option, optionIndex) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'option-btn';
+          button.textContent = option;
+
+          if (question.solved && question.selectedOptionIndex === optionIndex) {
+            button.classList.add('correct');
+          } else if (!question.solved && question.selectedOptionIndex === optionIndex) {
+            button.classList.add('wrong');
+          }
+
+          if (question.solved) {
+            button.disabled = true;
+          } else {
+            button.addEventListener('click', () => answerQuestion(question.id, optionIndex));
+          }
+
+          options.appendChild(button);
+        });
+
+        card.appendChild(options);
+
+        const feedback = document.createElement('div');
+        feedback.className = 'question-feedback';
+        feedback.textContent = question.solved
+          ? 'Resposta correta salva.'
+          : question.selectedOptionIndex === null
+            ? 'Escolha uma alternativa.'
+            : 'Resposta incorreta. Tente novamente.';
+        card.appendChild(feedback);
+
+        quizListEl.appendChild(card);
+      });
+    }
+
+    function renderSession(session) {
+      currentSession = session;
+      resultEl.textContent = session?.explanation || 'Aguardando resposta...';
+      renderProgress(session);
+      renderQuiz(session);
     }
 
     async function saveTheme() {
@@ -249,31 +406,52 @@
       statusEl.textContent = `Tema salvo em: ${new Date(data.data.updatedAt).toLocaleString()}`;
     }
 
-    async function fetchExplanation() {
-      resultEl.textContent = 'Consultando IA...';
-      const response = await fetch('/study-explain');
+    async function loadStudySession() {
+      resultEl.textContent = 'Preparando estudo...';
+      const response = await fetch('/study-session');
       const data = await response.json();
 
       if (!response.ok) {
+        renderSession(null);
         resultEl.textContent = data.error ? `${data.error}\n${data.details || ''}` : 'Erro ao consultar IA.';
         return;
       }
 
-      resultEl.textContent = data.explanation;
+      renderSession(data);
+    }
+
+    async function answerQuestion(questionId, optionIndex) {
+      statusEl.textContent = 'Validando resposta...';
+      const response = await fetch('/study-answer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questionId, optionIndex })
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        statusEl.textContent = data.error || 'Erro ao validar resposta.';
+        return;
+      }
+
+      renderSession(data.session);
+      statusEl.textContent = data.correct
+        ? 'Resposta correta. Prossiga para a proxima.'
+        : 'Resposta incorreta. Revise a explicacao e tente novamente.';
     }
 
     saveThemeBtn.addEventListener('click', async () => {
       try {
         await saveTheme();
-        await fetchExplanation();
+        await loadStudySession();
       } catch (err) {
         statusEl.textContent = `Erro: ${err.message}`;
       }
     });
 
-    refreshExplainBtn.addEventListener('click', async () => {
+    loadStudyBtn.addEventListener('click', async () => {
       try {
-        await fetchExplanation();
+        await loadStudySession();
       } catch (err) {
         resultEl.textContent = `Erro: ${err.message}`;
       }
@@ -282,7 +460,7 @@
     (async function init() {
       try {
         await loadSavedTheme();
-        await fetchExplanation();
+        await loadStudySession();
       } catch (err) {
         statusEl.textContent = `Erro ao iniciar: ${err.message}`;
       }

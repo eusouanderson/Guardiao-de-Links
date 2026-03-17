@@ -19,7 +19,7 @@ async function createFixture() {
   );
   await fs.writeFile(
     studyFilePath,
-    JSON.stringify({ prompt: '', updatedAt: null }, null, 2)
+    JSON.stringify({ prompt: '', updatedAt: null, lesson: null }, null, 2)
   );
 
   return {
@@ -27,6 +27,17 @@ async function createFixture() {
     linksFilePath,
     studyFilePath,
     publicDir: path.join(__dirname, '..', 'src', 'public')
+  };
+}
+
+function createGroqPayload() {
+  return {
+    explanation: 'Explicacao simulada sobre event loop.',
+    questions: Array.from({ length: 10 }, (_, index) => ({
+      question: `Pergunta ${index + 1}?`,
+      options: ['Opcao A', 'Opcao B', 'Opcao C', 'Opcao D'],
+      correctOptionIndex: 1
+    }))
   };
 }
 
@@ -139,16 +150,17 @@ test('POST /study-theme saves the study prompt', async () => {
     assert.equal(payload.success, true);
     assert.equal(savedTheme.prompt, 'event loop e promises');
     assert.ok(savedTheme.updatedAt);
+    assert.equal(savedTheme.lesson, null);
   } finally {
     await server.close();
   }
 });
 
-test('GET /study-explain returns 400 when no prompt is saved', async () => {
+test('GET /study-session returns 400 when no prompt is saved', async () => {
   const server = await startTestServer();
 
   try {
-    const response = await fetch(`${server.baseUrl}/study-explain`);
+    const response = await fetch(`${server.baseUrl}/study-session`);
     const payload = await response.json();
 
     assert.equal(response.status, 400);
@@ -158,17 +170,19 @@ test('GET /study-explain returns 400 when no prompt is saved', async () => {
   }
 });
 
-test('GET /study-explain returns explanation from mocked Groq client', async () => {
+test('GET /study-session generates explanation and 10 questions only once while pending', async () => {
   process.env.GROQ_API_KEY = 'test-key';
+  let fetchCalls = 0;
   const server = await startTestServer({
     fetchImpl: async () => ({
       ok: true,
       async json() {
+        fetchCalls += 1;
         return {
           choices: [
             {
               message: {
-                content: 'Explicacao simulada sobre o tema salvo.'
+                content: JSON.stringify(createGroqPayload())
               }
             }
           ]
@@ -180,15 +194,145 @@ test('GET /study-explain returns explanation from mocked Groq client', async () 
   try {
     await fs.writeFile(
       server.fixture.studyFilePath,
-      JSON.stringify({ prompt: 'microtasks', updatedAt: '2026-03-17T00:00:00.000Z' }, null, 2)
+      JSON.stringify({ prompt: 'microtasks', updatedAt: '2026-03-17T00:00:00.000Z', lesson: null }, null, 2)
     );
 
-    const response = await fetch(`${server.baseUrl}/study-explain`);
+    const firstResponse = await fetch(`${server.baseUrl}/study-session`);
+    const firstPayload = await firstResponse.json();
+    const secondResponse = await fetch(`${server.baseUrl}/study-session`);
+    const secondPayload = await secondResponse.json();
+
+    assert.equal(firstResponse.status, 200);
+    assert.equal(firstPayload.prompt, 'microtasks');
+    assert.equal(firstPayload.questions.length, 10);
+    assert.equal(firstPayload.progress.correctCount, 0);
+    assert.equal(secondResponse.status, 200);
+    assert.equal(secondPayload.explanation, 'Explicacao simulada sobre event loop.');
+    assert.equal(fetchCalls, 1);
+  } finally {
+    delete process.env.GROQ_API_KEY;
+    await server.close();
+  }
+});
+
+test('POST /study-answer marks progress and GET /study-status exposes pending study', async () => {
+  const lesson = {
+    promptSnapshot: 'event loop',
+    explanation: 'Resumo salvo.',
+    questions: [
+      {
+        id: 1,
+        question: 'Pergunta 1?',
+        options: ['A', 'B', 'C', 'D'],
+        correctOptionIndex: 2,
+        solved: false,
+        selectedOptionIndex: null
+      },
+      {
+        id: 2,
+        question: 'Pergunta 2?',
+        options: ['A', 'B', 'C', 'D'],
+        correctOptionIndex: 0,
+        solved: false,
+        selectedOptionIndex: null
+      }
+    ],
+    correctCount: 0,
+    completed: false,
+    generatedAt: '2026-03-17T00:00:00.000Z'
+  };
+  const server = await startTestServer();
+
+  try {
+    await fs.writeFile(
+      server.fixture.studyFilePath,
+      JSON.stringify({ prompt: 'event loop', updatedAt: '2026-03-17T00:00:00.000Z', lesson }, null, 2)
+    );
+
+    const wrongResponse = await fetch(`${server.baseUrl}/study-answer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questionId: 1, optionIndex: 1 })
+    });
+    const wrongPayload = await wrongResponse.json();
+    const correctResponse = await fetch(`${server.baseUrl}/study-answer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questionId: 1, optionIndex: 2 })
+    });
+    const correctPayload = await correctResponse.json();
+    const statusResponse = await fetch(`${server.baseUrl}/study-status`);
+    const statusPayload = await statusResponse.json();
+
+    assert.equal(wrongResponse.status, 200);
+    assert.equal(wrongPayload.correct, false);
+    assert.equal(correctResponse.status, 200);
+    assert.equal(correctPayload.correct, true);
+    assert.equal(correctPayload.session.progress.correctCount, 1);
+    assert.equal(statusResponse.status, 200);
+    assert.equal(statusPayload.pendingStudy, true);
+    assert.equal(statusPayload.progress.correctCount, 1);
+  } finally {
+    await server.close();
+  }
+});
+
+test('GET /study-session regenerates only after all questions are solved', async () => {
+  process.env.GROQ_API_KEY = 'test-key';
+  let fetchCalls = 0;
+  const server = await startTestServer({
+    fetchImpl: async () => ({
+      ok: true,
+      async json() {
+        fetchCalls += 1;
+        return {
+          choices: [
+            {
+              message: {
+                content: JSON.stringify(createGroqPayload())
+              }
+            }
+          ]
+        };
+      }
+    })
+  });
+
+  try {
+    await fs.writeFile(
+      server.fixture.studyFilePath,
+      JSON.stringify(
+        {
+          prompt: 'microtasks',
+          updatedAt: '2026-03-17T00:00:00.000Z',
+          lesson: {
+            promptSnapshot: 'microtasks',
+            explanation: 'Resumo antigo.',
+            questions: Array.from({ length: 10 }, (_, index) => ({
+              id: index + 1,
+              question: `Pergunta ${index + 1}?`,
+              options: ['A', 'B', 'C', 'D'],
+              correctOptionIndex: 1,
+              solved: true,
+              selectedOptionIndex: 1
+            })),
+            correctCount: 10,
+            completed: true,
+            generatedAt: '2026-03-17T00:00:00.000Z'
+          }
+        },
+        null,
+        2
+      )
+    );
+
+    const response = await fetch(`${server.baseUrl}/study-session`);
     const payload = await response.json();
 
     assert.equal(response.status, 200);
     assert.equal(payload.prompt, 'microtasks');
-    assert.equal(payload.explanation, 'Explicacao simulada sobre o tema salvo.');
+    assert.equal(payload.questions.length, 10);
+    assert.equal(fetchCalls, 1);
   } finally {
     delete process.env.GROQ_API_KEY;
     await server.close();
