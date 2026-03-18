@@ -19,7 +19,7 @@ async function createFixture() {
   );
   await fs.writeFile(
     studyFilePath,
-    JSON.stringify({ prompt: '', updatedAt: null, lesson: null }, null, 2)
+    JSON.stringify({ prompt: '', updatedAt: null, lesson: null, completionCount: 0 }, null, 2)
   );
 
   return {
@@ -149,15 +149,17 @@ test('POST /study-theme saves the study prompt', async () => {
     assert.equal(response.status, 200);
     assert.equal(payload.success, true);
     assert.equal(payload.data.status.canSaveNewTheme, false);
+    assert.equal(payload.data.status.remainingCycles, 10);
     assert.equal(savedTheme.prompt, 'event loop e promises');
     assert.ok(savedTheme.updatedAt);
     assert.equal(savedTheme.lesson, null);
+    assert.equal(savedTheme.completionCount, 0);
   } finally {
     await server.close();
   }
 });
 
-test('POST /study-theme is blocked while there is a pending study cycle', async () => {
+test('POST /study-theme is blocked until 10 cycles are completed', async () => {
   const server = await startTestServer();
 
   try {
@@ -187,7 +189,8 @@ test('POST /study-theme is blocked while there is a pending study cycle', async 
         2
       )
     );
-
+        },
+          completionCount: 3
     const response = await fetch(`${server.baseUrl}/study-theme`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -197,7 +200,8 @@ test('POST /study-theme is blocked while there is a pending study cycle', async 
     const savedTheme = JSON.parse(await fs.readFile(server.fixture.studyFilePath, 'utf8'));
 
     assert.equal(response.status, 409);
-    assert.match(payload.error, /Finalize as 10 perguntas/);
+    assert.match(payload.error, /Conclua 10 ciclos/);
+    assert.match(payload.error, /Faltam 7 ciclo/);
     assert.equal(savedTheme.prompt, 'event loop');
   } finally {
     await server.close();
@@ -242,7 +246,7 @@ test('GET /study-session generates explanation and 10 questions only once while 
   try {
     await fs.writeFile(
       server.fixture.studyFilePath,
-      JSON.stringify({ prompt: 'microtasks', updatedAt: '2026-03-17T00:00:00.000Z', lesson: null }, null, 2)
+      JSON.stringify({ prompt: 'microtasks', updatedAt: '2026-03-17T00:00:00.000Z', lesson: null, completionCount: 0 }, null, 2)
     );
 
     const firstResponse = await fetch(`${server.baseUrl}/study-session`);
@@ -294,7 +298,7 @@ test('POST /study-answer marks progress and GET /study-status exposes pending st
   try {
     await fs.writeFile(
       server.fixture.studyFilePath,
-      JSON.stringify({ prompt: 'event loop', updatedAt: '2026-03-17T00:00:00.000Z', lesson }, null, 2)
+      JSON.stringify({ prompt: 'event loop', updatedAt: '2026-03-17T00:00:00.000Z', lesson, completionCount: 0 }, null, 2)
     );
 
     const wrongResponse = await fetch(`${server.baseUrl}/study-answer`, {
@@ -320,6 +324,65 @@ test('POST /study-answer marks progress and GET /study-status exposes pending st
     assert.equal(statusResponse.status, 200);
     assert.equal(statusPayload.pendingStudy, true);
     assert.equal(statusPayload.progress.correctCount, 1);
+    assert.equal(statusPayload.canSaveNewTheme, false);
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /study-answer unlocks a new prompt after the 10th completed cycle', async () => {
+  const server = await startTestServer();
+
+  try {
+    await fs.writeFile(
+      server.fixture.studyFilePath,
+      JSON.stringify(
+        {
+          prompt: 'event loop',
+          updatedAt: '2026-03-17T00:00:00.000Z',
+          completionCount: 9,
+          lesson: {
+            promptSnapshot: 'event loop',
+            explanation: 'Resumo salvo.',
+            questions: Array.from({ length: 10 }, (_, index) => ({
+              id: index + 1,
+              question: `Pergunta ${index + 1}?`,
+              options: ['A', 'B', 'C', 'D'],
+              correctOptionIndex: 1,
+              solved: index < 9,
+              selectedOptionIndex: index < 9 ? 1 : null
+            })),
+            correctCount: 9,
+            completed: false,
+            generatedAt: '2026-03-17T00:00:00.000Z'
+          }
+        },
+        null,
+        2
+      )
+    );
+
+    const answerResponse = await fetch(`${server.baseUrl}/study-answer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questionId: 10, optionIndex: 1 })
+    });
+    const answerPayload = await answerResponse.json();
+    const saveResponse = await fetch(`${server.baseUrl}/study-theme`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'novo tema liberado' })
+    });
+    const savePayload = await saveResponse.json();
+    const savedTheme = JSON.parse(await fs.readFile(server.fixture.studyFilePath, 'utf8'));
+
+    assert.equal(answerResponse.status, 200);
+    assert.equal(answerPayload.session.completionCount, 10);
+    assert.equal(answerPayload.session.progress.completed, true);
+    assert.equal(saveResponse.status, 200);
+    assert.equal(savePayload.data.status.canSaveNewTheme, false);
+    assert.equal(savedTheme.prompt, 'novo tema liberado');
+    assert.equal(savedTheme.completionCount, 0);
   } finally {
     await server.close();
   }
@@ -367,7 +430,8 @@ test('GET /study-session regenerates only after all questions are solved', async
             correctCount: 10,
             completed: true,
             generatedAt: '2026-03-17T00:00:00.000Z'
-          }
+          },
+          completionCount: 4
         },
         null,
         2
@@ -381,6 +445,7 @@ test('GET /study-session regenerates only after all questions are solved', async
     assert.equal(payload.prompt, 'microtasks');
     assert.equal(payload.questions.length, 10);
     assert.equal(fetchCalls, 1);
+    assert.equal(payload.completionCount, 4);
   } finally {
     delete process.env.GROQ_API_KEY;
     await server.close();

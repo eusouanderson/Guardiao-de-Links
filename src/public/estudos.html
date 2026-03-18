@@ -143,13 +143,167 @@
     }
 
     .progress-card {
+      position: relative;
+      overflow: hidden;
       margin-top: 1rem;
-      padding: 1rem;
-      background: #eef2ff;
-      border: 2px solid #c7d2fe;
-      border-radius: 16px;
-      color: #3730a3;
-      font-weight: 600;
+      padding: 1.25rem;
+      background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.42), transparent 34%),
+        linear-gradient(135deg, #1e1b4b 0%, #312e81 52%, #4338ca 100%);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 22px;
+      color: #eef2ff;
+      box-shadow: 0 18px 35px -20px rgba(49, 46, 129, 0.95);
+    }
+
+    .progress-card::before {
+      content: '';
+      position: absolute;
+      inset: auto -4rem -4rem auto;
+      width: 10rem;
+      height: 10rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      filter: blur(4px);
+    }
+
+    .progress-card.is-complete {
+      background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.35), transparent 34%),
+        linear-gradient(135deg, #064e3b 0%, #047857 50%, #10b981 100%);
+      box-shadow: 0 18px 35px -20px rgba(5, 150, 105, 0.95);
+    }
+
+    .progress-card.is-empty {
+      background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.35), transparent 34%),
+        linear-gradient(135deg, #334155 0%, #1f2937 100%);
+      box-shadow: 0 18px 35px -20px rgba(31, 41, 55, 0.8);
+    }
+
+    .progress-head {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .progress-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.7rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      color: rgba(238, 242, 255, 0.92);
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .progress-title {
+      margin-top: 0.75rem;
+      font-size: 1.15rem;
+      line-height: 1.35;
+      color: white;
+    }
+
+    .progress-subtitle {
+      margin-top: 0.45rem;
+      color: rgba(224, 231, 255, 0.82);
+      line-height: 1.55;
+      font-size: 0.95rem;
+    }
+
+    .progress-badge-wrap {
+      position: relative;
+      z-index: 1;
+      flex-shrink: 0;
+    }
+
+    .progress-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.85rem;
+      margin-bottom: 1rem;
+    }
+
+    .progress-stat {
+      padding: 0.9rem 1rem;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .progress-stat-label {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba(224, 231, 255, 0.72);
+    }
+
+    .progress-stat-value {
+      display: block;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: white;
+    }
+
+    .progress-bars {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .progress-meter-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.35rem;
+      font-size: 0.88rem;
+      color: rgba(238, 242, 255, 0.88);
+    }
+
+    .progress-bar-track {
+      overflow: hidden;
+      height: 0.7rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 50%, #f97316 100%);
+      box-shadow: 0 0 18px rgba(249, 115, 22, 0.35);
+      transition: width 0.35s ease;
+    }
+
+    .progress-bar-fill.cycles {
+      background: linear-gradient(90deg, #93c5fd 0%, #60a5fa 55%, #22d3ee 100%);
+      box-shadow: 0 0 18px rgba(34, 211, 238, 0.28);
+    }
+
+    .progress-note {
+      position: relative;
+      z-index: 1;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.14);
+      color: rgba(238, 242, 255, 0.92);
+      line-height: 1.55;
     }
 
     .result-card {
@@ -281,6 +435,14 @@
     }
 
     @media (max-width: 640px) {
+      .progress-head {
+        flex-direction: column;
+      }
+
+      .progress-grid {
+        grid-template-columns: 1fr;
+      }
+
       body {
         padding: 0.75rem;
       }
@@ -355,10 +517,11 @@
 
     function updateSaveThemeState(status) {
       const canSave = Boolean(status?.canSaveNewTheme ?? true);
+      const remainingCycles = Number(status?.remainingCycles ?? 0);
       saveThemeBtn.disabled = !canSave;
       saveThemeBtn.title = canSave
         ? 'Salvar um novo tema de estudo'
-        : 'Finalize as 10 perguntas atuais para liberar um novo tema';
+        : `Conclua mais ${remainingCycles} ciclo(s) para liberar um novo tema`;
     }
 
     async function loadSavedTheme() {
@@ -375,19 +538,83 @@
 
     function renderProgress(session) {
       if (!session || !session.progress.totalQuestions) {
-        progressCardEl.innerHTML = 'Nenhum ciclo de estudo ativo.';
+        progressCardEl.className = 'progress-card is-empty';
+        progressCardEl.innerHTML = `
+          <div class="progress-head">
+            <div>
+              <div class="progress-kicker">Ciclo de estudo</div>
+              <div class="progress-title">Nenhum ciclo ativo no momento</div>
+              <div class="progress-subtitle">Salve ou carregue um tema para iniciar a explicacao e as 10 perguntas.</div>
+            </div>
+          </div>
+        `;
         return;
       }
 
       const { correctCount, totalQuestions, completed } = session.progress;
       const count = session.completionCount || 0;
+      const remainingCycles = Math.max(10 - count, 0);
+      const questionPercent = Math.round((correctCount / totalQuestions) * 100);
+      const cyclePercent = Math.min(Math.round((count / 10) * 100), 100);
       const badgeHtml = count > 0
         ? `<span class="completion-badge">🏆 ${count} ciclo${count > 1 ? 's' : ''} concluido${count > 1 ? 's' : ''}</span>`
         : '';
 
-      progressCardEl.innerHTML = completed
-        ? `Ciclo concluido: ${correctCount}/${totalQuestions} perguntas corretas.${badgeHtml} Ao carregar de novo, a IA gera um novo estudo.`
-        : `Voce acertou ${correctCount} de ${totalQuestions} perguntas.${badgeHtml} O estudo continua salvo em cache ate fechar as 10.`;
+      progressCardEl.className = completed ? 'progress-card is-complete' : 'progress-card';
+      progressCardEl.innerHTML = `
+        <div class="progress-head">
+          <div>
+            <div class="progress-kicker">${completed ? 'Ciclo fechado' : 'Ciclo em andamento'}</div>
+            <div class="progress-title">${completed ? 'As 10 perguntas deste ciclo foram concluídas.' : `Voce acertou ${correctCount} de ${totalQuestions} perguntas deste ciclo.`}</div>
+            <div class="progress-subtitle">${completed
+              ? (remainingCycles > 0
+                ? `Faltam ${remainingCycles} ciclo(s) completos para liberar um novo prompt.`
+                : 'Meta atingida. Um novo prompt ja pode ser salvo.')
+              : 'O estudo atual continua em cache ate voce fechar todas as 10 perguntas.'}
+            </div>
+          </div>
+          <div class="progress-badge-wrap">${badgeHtml}</div>
+        </div>
+
+        <div class="progress-grid">
+          <div class="progress-stat">
+            <span class="progress-stat-label">Perguntas certas</span>
+            <span class="progress-stat-value">${correctCount}/${totalQuestions}</span>
+          </div>
+          <div class="progress-stat">
+            <span class="progress-stat-label">Ciclos concluidos</span>
+            <span class="progress-stat-value">${count}/10</span>
+          </div>
+        </div>
+
+        <div class="progress-bars">
+          <div>
+            <div class="progress-meter-label">
+              <span>Progresso do ciclo atual</span>
+              <strong>${questionPercent}%</strong>
+            </div>
+            <div class="progress-bar-track">
+              <div class="progress-bar-fill" style="width: ${questionPercent}%;"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="progress-meter-label">
+              <span>Progresso para liberar novo prompt</span>
+              <strong>${cyclePercent}%</strong>
+            </div>
+            <div class="progress-bar-track">
+              <div class="progress-bar-fill cycles" style="width: ${cyclePercent}%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="progress-note">
+          ${remainingCycles > 0
+            ? `Ainda faltam <strong>${remainingCycles}</strong> ciclo(s) completo(s) neste tema para liberar um novo prompt.`
+            : 'Novo prompt liberado. Se quiser, ja pode salvar um novo tema de estudo.'}
+        </div>
+      `;
     }
 
     function renderQuiz(session) {
@@ -448,7 +675,10 @@
 
     function renderSession(session) {
       currentSession = session;
-      updateSaveThemeState({ canSaveNewTheme: session?.progress?.completed ?? true });
+      updateSaveThemeState({
+        canSaveNewTheme: !session || (session.completionCount || 0) >= 10,
+        remainingCycles: Math.max(10 - (session?.completionCount || 0), 0)
+      });
       resultEl.textContent = session?.explanation || 'Aguardando resposta...';
       renderProgress(session);
       renderQuiz(session);
@@ -512,8 +742,15 @@
 
       if (justCompleted) {
         const count = data.session.completionCount || 1;
-        showToast(`🎉 Parabens! Voce concluiu ${count} ciclo${count > 1 ? 's' : ''} de estudo!`);
-        statusEl.textContent = 'Ciclo concluido! Todas as 10 respostas corretas. Carregue para gerar um novo.';
+        const remainingCycles = Math.max(10 - count, 0);
+        showToast(
+          remainingCycles > 0
+            ? `🎉 Parabens! ${count}/10 ciclos concluidos. Faltam ${remainingCycles}.`
+            : '🎉 Parabens! Voce concluiu 10 ciclos e liberou um novo tema.'
+        );
+        statusEl.textContent = remainingCycles > 0
+          ? `Ciclo concluido! Agora faltam ${remainingCycles} ciclo(s) para liberar um novo tema.`
+          : 'Ciclo concluido! Novo tema liberado para ser salvo.';
       } else {
         statusEl.textContent = data.correct
           ? 'Resposta correta. Prossiga para a proxima.'

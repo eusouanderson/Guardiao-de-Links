@@ -10,6 +10,7 @@ const DEFAULT_DATA_DIR = path.join(__dirname, 'data');
 const DEFAULT_LINKS_FILE_PATH = path.join(DEFAULT_DATA_DIR, 'links.json');
 const DEFAULT_STUDY_FILE_PATH = path.join(DEFAULT_DATA_DIR, 'study-theme.json');
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const REQUIRED_COMPLETION_COUNT = 10;
 const MIME_TYPES = {
   '.css': 'text/css',
   '.html': 'text/html',
@@ -230,7 +231,8 @@ const createApp = (options = {}) => {
       ...currentState,
       prompt,
       updatedAt: new Date().toISOString(),
-      lesson: null
+      lesson: null,
+      completionCount: 0
     };
     await writeStudyState(payload);
     return payload;
@@ -330,15 +332,20 @@ const createApp = (options = {}) => {
     const hasPrompt = Boolean(studyState.prompt);
     const totalQuestions = lesson?.questions.length || (hasPrompt ? 10 : 0);
     const correctCount = lesson?.correctCount || 0;
+    const completionCount = studyState.completionCount || 0;
+    const remainingCycles = Math.max(REQUIRED_COMPLETION_COUNT - completionCount, 0);
     const pendingStudy = hasPrompt && (!lesson || !lesson.completed || lesson.promptSnapshot !== studyState.prompt);
+    const canSaveNewTheme = !hasPrompt || completionCount >= REQUIRED_COMPLETION_COUNT;
 
     return {
       hasPrompt,
       pendingStudy,
-      canSaveNewTheme: !pendingStudy,
+      canSaveNewTheme,
       prompt: studyState.prompt,
       updatedAt: studyState.updatedAt,
-      completionCount: studyState.completionCount || 0,
+      completionCount,
+      requiredCompletionCount: REQUIRED_COMPLETION_COUNT,
+      remainingCycles,
       progress: {
         correctCount,
         totalQuestions,
@@ -390,7 +397,7 @@ const createApp = (options = {}) => {
 
         if (!currentStatus.canSaveNewTheme) {
           sendJson(res, 409, {
-            error: 'Finalize as 10 perguntas do estudo atual antes de salvar um novo tema.'
+            error: `Conclua ${currentStatus.requiredCompletionCount} ciclos do tema atual antes de salvar um novo tema. Faltam ${currentStatus.remainingCycles} ciclo(s).`
           });
           return;
         }

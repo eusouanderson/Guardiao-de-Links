@@ -1,22 +1,22 @@
 {
   "prompt": "Event Loop : Call Stack Callback Queue Microtasks vs Macrotasks setTimeout, Promise, async/await",
-  "updatedAt": "2026-03-17T21:31:30.751Z",
+  "updatedAt": "2026-03-17T21:48:34.621Z",
   "lesson": {
     "promptSnapshot": "Event Loop : Call Stack Callback Queue Microtasks vs Macrotasks setTimeout, Promise, async/await",
-    "explanation": "O Event Loop é o mecanismo que permite ao JavaScript executar código assíncrono apesar de ser single‑threaded. Ele funciona em conjunto com três estruturas principais:\n\n1. **Call Stack** – pilha onde as funções são empilhadas quando são chamadas e desempilhadas ao retornarem. Enquanto houver itens na pilha, o JavaScript está ocupado executando código síncrono.\n2. **Callback Queue (Task Queue)** – fila de tarefas (macrotasks) que contém callbacks de eventos, timers (setTimeout, setInterval), I/O, etc. Uma tarefa só é movida para a Call Stack quando esta está vazia.\n3. **Microtask Queue** – fila de microtarefas que tem prioridade maior que a fila de macrotasks. Microtasks são criadas por Promise.then/catch/finally, queueMicrotask e alguns APIs internas.\n\nO **Event Loop** segue o ciclo:\n- Enquanto a Call Stack não estiver vazia, continua executando.\n- Quando a pilha fica vazia, esvazia a Microtask Queue (executando todas as microtasks, uma a uma).\n- Depois, retira a primeira macrotask da Callback Queue e a coloca na Call Stack.\n- Repete o processo.\n\n**Microtasks vs Macrotasks**\n- *Microtasks* são executadas imediatamente após a pilha ficar vazia, antes de qualquer renderização ou macrotask. Garantem que promessas sejam resolvidas o mais rápido possível.\n- *Macrotasks* (ou tasks) são executadas em ciclos posteriores do loop, permitindo que a UI seja atualizada entre elas.\n\n**setTimeout** cria uma macrotask que será colocada na Callback Queue após o tempo especificado.\n**Promise** cria microtasks; o callback de `.then`/`.catch`/`.finally` é enfileirado na Microtask Queue.\n**async/await** é sintaxe açúcar sobre Promises. Uma função marcada como `async` sempre retorna uma Promise. O `await` pausa a execução da async function até que a Promise seja resolvida, mas apenas a própria async function é suspensa; a Call Stack continua livre para processar outras tarefas.\n\nCompreender esse fluxo é essencial para evitar race conditions, garantir a ordem correta de execução e otimizar a performance de aplicações JavaScript.",
+    "explanation": "O **Event Loop** é o mecanismo que permite ao JavaScript executar código de forma assíncrona, apesar de ser single‑threaded. Ele funciona verificando continuamente se a **Call Stack** (pilha de chamadas) está vazia. Quando a pilha está vazia, o loop processa as filas de tarefas:\n\n- **Callback Queue (macrotask queue)**: contém tarefas como callbacks de `setTimeout`, `setInterval`, I/O, etc. Cada item dessa fila é chamado de *macrotask*.\n- **Microtask Queue**: contém microtarefas, que são criadas por `Promise` (os callbacks de `.then/.catch/.finally`) e por APIs como `queueMicrotask`. Microtasks têm prioridade maior: após a execução de uma macrotask, o Event Loop esvazia completamente a fila de microtasks antes de renderizar a UI ou pegar a próxima macrotask.\n\n**Microtasks vs Macrotasks**\n- *Microtasks* são executadas imediatamente após a pilha ficar vazia, antes de qualquer renderização ou de outra macrotask.\n- *Macrotasks* são executadas uma por vez, e entre duas macrotasks o loop processa todas as microtasks pendentes.\n\n**`setTimeout`** agenda uma macrotask que será executada após, no mínimo, o tempo especificado (0 ms é permitido, mas o navegador pode aplicar um *clamp* de ~4 ms).\n\n**`Promise`** cria microtasks. Quando uma promise é resolvida ou rejeitada, os callbacks registrados com `.then/.catch/.finally` são colocados na fila de microtasks.\n\n**`async/await`** é sintaxe açúcar sobre promises. Uma função marcada como `async` retorna uma Promise; o `await` pausa a execução da função até que a Promise seja resolvida, inserindo o restante do código como uma microtask.\n\nEm resumo, o Event Loop garante que o código síncrono seja executado primeiro, seguido por todas as microtasks, e então pelas macrotasks, permitindo que o JavaScript continue responsivo mesmo com operações assíncronas.",
     "questions": [
       {
         "id": 1,
-        "question": "O que representa a Call Stack?",
+        "question": "O que representa a Call Stack (pilha de chamadas) no JavaScript?",
         "options": [
-          "Fila de microtasks",
-          "Pilha de chamadas de funções",
-          "Fila de eventos",
-          "Memória heap"
+          "Uma fila de callbacks a serem executados",
+          "Uma pilha que armazena as funções em execução",
+          "Uma lista de microtasks pendentes",
+          "Um registro de eventos de I/O"
         ],
         "correctOptionIndex": 1,
-        "solved": true,
-        "selectedOptionIndex": 1
+        "solved": false,
+        "selectedOptionIndex": null
       },
       {
         "id": 2,
@@ -24,8 +24,8 @@
         "options": [
           "Microtasks são executadas antes da renderização, macrotasks depois",
           "Microtasks têm prioridade maior e são processadas antes da fila de macrotasks",
-          "Macrotasks são síncronas",
-          "Microtasks são usadas apenas por setTimeout"
+          "Macrotasks são sempre síncronas",
+          "Microtasks são criadas apenas por setTimeout"
         ],
         "correctOptionIndex": 1,
         "solved": false,
@@ -33,12 +33,12 @@
       },
       {
         "id": 3,
-        "question": "Qual das seguintes APIs cria uma microtask?",
+        "question": "Qual das opções abaixo cria uma microtask?",
         "options": [
           "setTimeout",
-          "Promise.then",
+          "Promise.resolve().then",
           "requestAnimationFrame",
-          "addEventListener"
+          "setInterval"
         ],
         "correctOptionIndex": 1,
         "solved": false,
@@ -46,12 +46,12 @@
       },
       {
         "id": 4,
-        "question": "Qual é a ordem correta de execução dos seguintes códigos?\nconsole.log('A');\nsetTimeout(()=> console.log('B'),0);\nPromise.resolve().then(()=> console.log('C'));\nconsole.log('D');",
+        "question": "Em que momento o Event Loop verifica se a Call Stack está vazia?",
         "options": [
-          "A D C B",
-          "A D B C",
-          "A C D B",
-          "A C B D"
+          "A cada iteração (tick) do loop",
+          "Apenas após a execução de uma microtask",
+          "Somente quando não há macrotasks pendentes",
+          "Nunca, a verificação é feita manualmente"
         ],
         "correctOptionIndex": 0,
         "solved": false,
@@ -59,51 +59,51 @@
       },
       {
         "id": 5,
-        "question": "O que faz a palavra‑chave async em uma função?",
+        "question": "Qual será a ordem de logs no seguinte código?\n\nconsole.log('A');\nsetTimeout(()=> console.log('B'), 0);\nPromise.resolve().then(()=> console.log('C'));\nconsole.log('D');",
         "options": [
-          "Transforma a função em geradora",
-          "Faz a função retornar uma Promise",
-          "Impede o uso de await",
-          "Executa a função imediatamente"
+          "A D C B",
+          "A D B C",
+          "A C D B",
+          "A B C D"
+        ],
+        "correctOptionIndex": 0,
+        "solved": false,
+        "selectedOptionIndex": null
+      },
+      {
+        "id": 6,
+        "question": "O que `async/await` faz internamente?",
+        "options": [
+          "Converte código síncrono em assíncrono usando callbacks",
+          "Transforma a função em uma Promise e pausa a execução até a resolução",
+          "Cria um novo thread para a função",
+          "Elimina a necessidade de microtasks"
         ],
         "correctOptionIndex": 1,
         "solved": false,
         "selectedOptionIndex": null
       },
       {
-        "id": 6,
-        "question": "Qual é o efeito de await dentro de uma async function?",
-        "options": [
-          "Pausa a execução da thread principal",
-          "Bloqueia a Call Stack até a Promise ser resolvida",
-          "Pausa a async function até a Promise ser resolvida, permitindo que a Call Stack continue",
-          "Converte a Promise em um número"
-        ],
-        "correctOptionIndex": 2,
-        "solved": false,
-        "selectedOptionIndex": null
-      },
-      {
         "id": 7,
-        "question": "Qual das seguintes chamadas será tratada como macrotask?",
+        "question": "Qual é o tempo mínimo que o `setTimeout` pode ter na maioria dos navegadores?",
         "options": [
-          "Promise.resolve().then(...)",
-          "queueMicrotask(...)",
-          "setTimeout(...)",
-          "async function call"
+          "0 ms",
+          "1 ms",
+          "4 ms",
+          "10 ms"
         ],
-        "correctOptionIndex": 2,
+        "correctOptionIndex": 0,
         "solved": false,
         "selectedOptionIndex": null
       },
       {
         "id": 8,
-        "question": "Em que momento o Event Loop verifica a Callback Queue?",
+        "question": "Onde são armazenadas as callbacks de `setTimeout`?",
         "options": [
-          "Antes de processar microtasks",
-          "Somente após a Call Stack estar vazia e microtasks esgotadas",
-          "A cada milissegundo",
-          "Nunca"
+          "Call Stack",
+          "Callback Queue (macrotask queue)",
+          "Microtask Queue",
+          "Heap"
         ],
         "correctOptionIndex": 1,
         "solved": false,
@@ -111,12 +111,12 @@
       },
       {
         "id": 9,
-        "question": "Qual é a finalidade da fila de Callback (Task Queue)?",
+        "question": "Qual das afirmações é verdadeira sobre a fila de microtasks?",
         "options": [
-          "Armazenar funções síncronas",
-          "Armazenar callbacks de eventos e timers que aguardam a Call Stack vazia",
-          "Armazenar variáveis globais",
-          "Gerenciar memória"
+          "É processada somente após todas as macrotasks",
+          "É processada antes da renderização e antes da próxima macrotask",
+          "Não pode conter callbacks de Promise",
+          "É limitada a 10 itens"
         ],
         "correctOptionIndex": 1,
         "solved": false,
@@ -124,20 +124,21 @@
       },
       {
         "id": 10,
-        "question": "Se você quiser garantir que um código seja executado após todas as microtasks, mas antes de qualquer macrotask, qual abordagem usar?",
+        "question": "Se uma Promise é rejeitada e não há `catch`, o que acontece?",
         "options": [
-          "setTimeout(...,0)",
-          "Promise.resolve().then(...)",
-          "queueMicrotask(...)",
-          "requestAnimationFrame(...)"
+          "O erro é silencioso",
+          "O erro é lançado como exceção não tratada",
+          "A Promise é convertida em resolved",
+          "O Event Loop para"
         ],
-        "correctOptionIndex": 2,
+        "correctOptionIndex": 1,
         "solved": false,
         "selectedOptionIndex": null
       }
     ],
-    "correctCount": 1,
+    "correctCount": 0,
     "completed": false,
-    "generatedAt": "2026-03-17T21:36:20.015Z"
-  }
+    "generatedAt": "2026-03-17T23:50:08.630Z"
+  },
+  "completionCount": 6
 }
