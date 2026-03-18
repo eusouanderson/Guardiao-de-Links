@@ -2,13 +2,11 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const dotenv = require('dotenv');
+const { createDatabase } = require('./db');
 
 dotenv.config();
 
 const DEFAULT_PUBLIC_DIR = path.join(__dirname, 'public');
-const DEFAULT_DATA_DIR = path.join(__dirname, 'data');
-const DEFAULT_LINKS_FILE_PATH = path.join(DEFAULT_DATA_DIR, 'links.json');
-const DEFAULT_STUDY_FILE_PATH = path.join(DEFAULT_DATA_DIR, 'study-theme.json');
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const REQUIRED_COMPLETION_COUNT = 10;
 const MIME_TYPES = {
@@ -42,19 +40,6 @@ const readRequestBody = (req) =>
     req.on('end', () => resolve(body));
     req.on('error', reject);
   });
-
-const readJsonFile = async (filePath, fallbackValue) => {
-  try {
-    const raw = await fs.promises.readFile(filePath, 'utf8');
-    return JSON.parse(raw);
-  } catch {
-    return fallbackValue;
-  }
-};
-
-const writeJsonFile = async (filePath, payload) => {
-  await fs.promises.writeFile(filePath, JSON.stringify(payload, null, 2));
-};
 
 const createEmptyStudyState = () => ({
   prompt: '',
@@ -179,8 +164,7 @@ const validateGeneratedQuestions = (questions) => {
 
 const createApp = (options = {}) => {
   const publicDir = options.publicDir || DEFAULT_PUBLIC_DIR;
-  const linksFilePath = options.linksFilePath || DEFAULT_LINKS_FILE_PATH;
-  const studyFilePath = options.studyFilePath || DEFAULT_STUDY_FILE_PATH;
+  const db = options.db || createDatabase();
   const groqModel = options.groqModel || process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
   const fetchImpl = options.fetchImpl || fetch;
 
@@ -211,19 +195,11 @@ const createApp = (options = {}) => {
     }
   };
 
-  const readLinks = async () => {
-    const links = await readJsonFile(linksFilePath, []);
-    return Array.isArray(links) ? links : [];
-  };
+  const readLinks = async () => db.readLinks();
 
-  const readStudyState = async () => {
-    const parsed = await readJsonFile(studyFilePath, createEmptyStudyState());
-    return normalizeStudyState(parsed);
-  };
+  const readStudyState = async () => normalizeStudyState(db.readStudyState());
 
-  const writeStudyState = async (studyState) => {
-    await writeJsonFile(studyFilePath, studyState);
-  };
+  const writeStudyState = async (studyState) => { db.writeStudyState(studyState); };
 
   const saveStudyTheme = async (prompt) => {
     const currentState = await readStudyState();
@@ -532,9 +508,7 @@ const createApp = (options = {}) => {
       try {
         const body = await readRequestBody(req);
         const newLink = JSON.parse(body || '{}');
-        const links = await readLinks();
-        links.push(newLink);
-        await writeJsonFile(linksFilePath, links);
+        db.addLink(newLink);
         sendJson(res, 200, { success: true });
       } catch (error) {
         sendJson(res, 400, { error: 'Dados inválidos', details: error.message });
@@ -547,9 +521,7 @@ const createApp = (options = {}) => {
         const body = await readRequestBody(req);
         const parsed = JSON.parse(body || '{}');
         const url = typeof parsed.url === 'string' ? parsed.url : '';
-        const links = await readLinks();
-        const filtered = links.filter((link) => link.url !== url);
-        await writeJsonFile(linksFilePath, filtered);
+        db.deleteLink(url);
         sendJson(res, 200, { success: true });
       } catch (error) {
         sendJson(res, 400, { error: 'Dados inválidos', details: error.message });
@@ -596,5 +568,13 @@ if (require.main === module) {
 
 module.exports = {
   createApp,
-  startServer
+  startServer,
+  // pure helpers exported for unit testing
+  normalizeQuestion,
+  countCorrectAnswers,
+  normalizeLesson,
+  normalizeStudyState,
+  buildSessionPayload,
+  extractJsonFromModel,
+  validateGeneratedQuestions
 };
