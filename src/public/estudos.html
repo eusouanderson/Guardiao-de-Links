@@ -31,7 +31,7 @@
 
     .container {
       width: 100%;
-      max-width: 760px;
+      max-width: 960px;
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
@@ -122,6 +122,43 @@
       opacity: 0.6;
       transform: none;
       box-shadow: none;
+    }
+
+    #startStudyBtn {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.25);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    #startStudyBtn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.35);
+    }
+
+    #startStudyBtn:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     #refreshExplainBtn {
@@ -434,6 +471,161 @@
       vertical-align: middle;
     }
 
+    #forceThemeBtn {
+      background: linear-gradient(135deg, #f97316, #ef4444);
+      color: white;
+      box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.2);
+    }
+
+    #forceThemeBtn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3);
+    }
+
+    .queue-section {
+      margin-top: 1rem;
+      padding: 1rem 1.25rem;
+      background: #fffbeb;
+      border: 2px solid #fde68a;
+      border-radius: 16px;
+    }
+
+    .queue-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .queue-header-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .queue-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #92400e;
+      margin: 0;
+    }
+
+    .queue-toggle-btn {
+      padding: 0.2rem 0.6rem;
+      background: rgba(92, 64, 14, 0.1);
+      color: #92400e;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .queue-toggle-btn:hover {
+      background: #fde68a;
+    }
+
+    .queue-ai-btn {
+      padding: 0.35rem 0.75rem;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      color: #fff;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .queue-ai-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 12px -8px rgba(37, 99, 235, 0.8);
+    }
+
+    .queue-ai-btn:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .queue-list {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .queue-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 0.85rem;
+      background: white;
+      border: 1px solid #fde68a;
+      border-radius: 10px;
+    }
+
+    .queue-controls {
+      display: inline-flex;
+      gap: 0.35rem;
+      margin-left: auto;
+    }
+
+    .queue-move-btn {
+      padding: 0.3rem 0.55rem;
+      background: #fff7ed;
+      color: #9a3412;
+      border: 1px solid #fdba74;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .queue-move-btn:hover:not(:disabled) {
+      background: #ffedd5;
+    }
+
+    .queue-move-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .queue-position {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.75rem;
+      height: 1.75rem;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .queue-prompt {
+      flex: 1;
+      color: #78350f;
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+
+    .queue-delete-btn {
+      padding: 0.3rem 0.6rem;
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+
+    .queue-delete-btn:hover {
+      background: #fca5a5;
+    }
+
     @media (max-width: 640px) {
       .progress-head {
         flex-direction: column;
@@ -471,11 +663,23 @@
 
     <div class="actions">
       <button id="saveThemeBtn" type="button">Salvar temas</button>
-      <button id="loadStudyBtn" type="button">Carregar estudo</button>
+      <button id="forceThemeBtn" type="button">⚡ Forçar agora</button>
+      <button id="startStudyBtn" type="button">🎓 Começar a estudar</button>
     </div>
 
     <div id="status">Carregando tema salvo...</div>
     <div id="progressCard" class="progress-card">Nenhum ciclo de estudo ativo.</div>
+
+    <div id="queueSection" class="queue-section" style="display:none">
+      <div class="queue-header" id="queueHeader">
+        <h3 class="queue-title">📋 Próximos estudos na fila</h3>
+        <div class="queue-header-actions">
+          <button type="button" class="queue-ai-btn" id="queueAiBtn">✨ Organizar com IA</button>
+          <button type="button" class="queue-toggle-btn" id="queueToggleBtn">Ocultar</button>
+        </div>
+      </div>
+      <div id="queueList" class="queue-list"></div>
+    </div>
 
     <div class="result-card">
       <h2>Explicacao da IA</h2>
@@ -489,6 +693,7 @@
       </div>
     </div>
 
+    <a class="back-link" href="/historico-estudos">🧾 Ver Historico de Estudos</a>
     <a class="back-link" href="/">← Voltar para Guardiao de Links</a>
   </div>
 
@@ -501,10 +706,23 @@
     const resultEl = document.getElementById('result');
     const quizListEl = document.getElementById('quizList');
     const saveThemeBtn = document.getElementById('saveThemeBtn');
-    const loadStudyBtn = document.getElementById('loadStudyBtn');
+    const forceThemeBtn = document.getElementById('forceThemeBtn');
+    const startStudyBtn = document.getElementById('startStudyBtn');
+    const queueAiBtn = document.getElementById('queueAiBtn');
     const toastEl = document.getElementById('toast');
     let currentSession = null;
     let toastTimer = null;
+    let studying = false;
+
+    function setUILocked(locked) {
+      studying = locked;
+      saveThemeBtn.disabled = locked;
+      forceThemeBtn.disabled = locked;
+      startStudyBtn.disabled = locked;
+      startStudyBtn.innerHTML = locked
+        ? '<span class="spinner"></span> Gerando estudo...'
+        : '🎓 Começar a estudar';
+    }
 
     function showToast(message) {
       if (toastTimer) clearTimeout(toastTimer);
@@ -518,10 +736,11 @@
     function updateSaveThemeState(status) {
       const canSave = Boolean(status?.canSaveNewTheme ?? true);
       const remainingCycles = Number(status?.remainingCycles ?? 0);
-      saveThemeBtn.disabled = !canSave;
+      saveThemeBtn.disabled = false;
+      saveThemeBtn.textContent = canSave ? 'Salvar temas' : 'Enfileirar tema';
       saveThemeBtn.title = canSave
         ? 'Salvar um novo tema de estudo'
-        : `Conclua mais ${remainingCycles} ciclo(s) para liberar um novo tema`;
+        : `Enfileirar (faltam ${remainingCycles} ciclo(s) para ativar automaticamente)`;
     }
 
     async function loadSavedTheme() {
@@ -567,10 +786,10 @@
             <div class="progress-kicker">${completed ? 'Ciclo fechado' : 'Ciclo em andamento'}</div>
             <div class="progress-title">${completed ? 'As 10 perguntas deste ciclo foram concluídas.' : `Voce acertou ${correctCount} de ${totalQuestions} perguntas deste ciclo.`}</div>
             <div class="progress-subtitle">${completed
-              ? (remainingCycles > 0
-                ? `Faltam ${remainingCycles} ciclo(s) completos para liberar um novo prompt.`
-                : 'Meta atingida. Um novo prompt ja pode ser salvo.')
-              : 'O estudo atual continua em cache ate voce fechar todas as 10 perguntas.'}
+          ? (remainingCycles > 0
+            ? `Faltam ${remainingCycles} ciclo(s) completos para liberar um novo prompt.`
+            : 'Meta atingida. Um novo prompt ja pode ser salvo.')
+          : 'O estudo atual continua em cache ate voce fechar todas as 10 perguntas.'}
             </div>
           </div>
           <div class="progress-badge-wrap">${badgeHtml}</div>
@@ -611,8 +830,8 @@
 
         <div class="progress-note">
           ${remainingCycles > 0
-            ? `Ainda faltam <strong>${remainingCycles}</strong> ciclo(s) completo(s) neste tema para liberar um novo prompt.`
-            : 'Novo prompt liberado. Se quiser, ja pode salvar um novo tema de estudo.'}
+          ? `Ainda faltam <strong>${remainingCycles}</strong> ciclo(s) completo(s) neste tema para liberar um novo prompt.`
+          : 'Novo prompt liberado. Se quiser, ja pode salvar um novo tema de estudo.'}
         </div>
       `;
     }
@@ -688,7 +907,7 @@
       const prompt = themeInput.value.trim();
       if (!prompt) {
         statusEl.textContent = 'Digite ao menos um tema para salvar.';
-        return;
+        return false;
       }
 
       statusEl.textContent = 'Salvando tema...';
@@ -701,25 +920,190 @@
 
       if (!response.ok) {
         statusEl.textContent = data.error || 'Erro ao salvar tema.';
-        return;
+        return false;
+      }
+
+      if (data.queued) {
+        statusEl.textContent = `Tema enfileirado na posição ${data.position}.`;
+        showToast(`📋 Tema enfileirado na posição ${data.position}.`);
+        await loadQueue();
+        return false;
       }
 
       updateSaveThemeState(data.data.status);
       statusEl.textContent = `Tema salvo em: ${new Date(data.data.updatedAt).toLocaleString()}`;
+      return true;
     }
 
     async function loadStudySession() {
-      resultEl.textContent = 'Preparando estudo...';
-      const response = await fetch('/study-session');
+      setUILocked(true);
+      resultEl.textContent = 'Aguardando a IA...';
+      try {
+        const response = await fetch('/study-session');
+        const data = await response.json();
+        if (!response.ok) {
+          renderSession(null);
+          resultEl.textContent = data.error ? `${data.error}\n${data.details || ''}` : 'Erro ao consultar IA.';
+          return;
+        }
+        renderSession(data);
+      } finally {
+        setUILocked(false);
+      }
+    }
+
+    async function forceTheme() {
+      const prompt = themeInput.value.trim();
+      if (!prompt) {
+        statusEl.textContent = 'Digite ao menos um tema para forçar.';
+        return;
+      }
+      statusEl.textContent = 'Ativando tema...';
+      const response = await fetch('/study-theme', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, force: true })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        statusEl.textContent = data.error || 'Erro ao ativar tema.';
+        return;
+      }
+      updateSaveThemeState(data.data.status);
+      statusEl.textContent = `Tema ativado em: ${new Date(data.data.updatedAt).toLocaleString()}`;
+      showToast('⚡ Tema ativado imediatamente!');
+      await loadQueue();
+    }
+
+    async function loadQueue() {
+      const response = await fetch('/study-queue');
+      const queue = await response.json();
+      renderQueue(queue);
+    }
+
+    let queueHidden = false;
+
+    document.getElementById('queueHeader').addEventListener('click', () => {
+      queueHidden = !queueHidden;
+      const queueList = document.getElementById('queueList');
+      const btn = document.getElementById('queueToggleBtn');
+      queueList.style.display = queueHidden ? 'none' : 'grid';
+      btn.textContent = queueHidden ? 'Mostrar' : 'Ocultar';
+    });
+
+    queueAiBtn.addEventListener('click', async (event) => {
+      event.stopPropagation();
+      await organizeQueueWithAI();
+    });
+
+    function renderQueue(queue) {
+      const queueSection = document.getElementById('queueSection');
+      const queueList = document.getElementById('queueList');
+      queueSection.style.display = queue.length ? 'block' : 'none';
+      queueList.style.display = queueHidden ? 'none' : 'grid';
+      queueList.innerHTML = '';
+      queue.forEach((item, index) => {
+        const el = document.createElement('div');
+        el.className = 'queue-item';
+        const pos = document.createElement('span');
+        pos.className = 'queue-position';
+        pos.textContent = index + 1;
+        const promptSpan = document.createElement('span');
+        promptSpan.className = 'queue-prompt';
+        promptSpan.textContent = item.prompt;
+
+        const controls = document.createElement('div');
+        controls.className = 'queue-controls';
+
+        const upBtn = document.createElement('button');
+        upBtn.type = 'button';
+        upBtn.className = 'queue-move-btn';
+        upBtn.textContent = '↑';
+        upBtn.title = 'Mover para cima';
+        upBtn.disabled = index === 0;
+        upBtn.addEventListener('click', () => moveQueueItem(item.id, 'up'));
+
+        const downBtn = document.createElement('button');
+        downBtn.type = 'button';
+        downBtn.className = 'queue-move-btn';
+        downBtn.textContent = '↓';
+        downBtn.title = 'Mover para baixo';
+        downBtn.disabled = index === queue.length - 1;
+        downBtn.addEventListener('click', () => moveQueueItem(item.id, 'down'));
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'queue-delete-btn';
+        btn.textContent = '✕';
+        btn.addEventListener('click', () => deleteFromQueue(item.id));
+
+        controls.appendChild(upBtn);
+        controls.appendChild(downBtn);
+
+        el.appendChild(pos);
+        el.appendChild(promptSpan);
+        el.appendChild(controls);
+        el.appendChild(btn);
+        queueList.appendChild(el);
+      });
+    }
+
+    async function moveQueueItem(id, direction) {
+      const response = await fetch('/study-queue/move', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, direction })
+      });
       const data = await response.json();
 
       if (!response.ok) {
-        renderSession(null);
-        resultEl.textContent = data.error ? `${data.error}\n${data.details || ''}` : 'Erro ao consultar IA.';
+        showToast(data.error || 'Nao foi possivel mover o item na fila.');
         return;
       }
 
-      renderSession(data);
+      renderQueue(data.queue || []);
+    }
+
+    async function deleteFromQueue(id) {
+      await fetch('/study-queue', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      await loadQueue();
+    }
+
+    async function organizeQueueWithAI() {
+      queueAiBtn.disabled = true;
+      const previousText = queueAiBtn.textContent;
+      queueAiBtn.textContent = 'Organizando...';
+
+      try {
+        const response = await fetch('/study-queue/organize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          showToast(data.details || data.error || 'Nao foi possivel organizar a fila com IA.');
+          return;
+        }
+
+        renderQueue(data.queue || []);
+        if (data.unchanged) {
+          showToast(data.message || 'Fila sem alteracao.');
+          return;
+        }
+
+        showToast(data.rationale
+          ? `✅ Fila reorganizada: ${data.rationale}`
+          : '✅ Fila reorganizada com apoio da IA.');
+      } finally {
+        queueAiBtn.disabled = false;
+        queueAiBtn.textContent = previousText;
+      }
     }
 
     async function answerQuestion(questionId, optionIndex) {
@@ -739,6 +1123,14 @@
 
       const justCompleted = !wasCompleted && data.session?.progress?.completed;
       renderSession(data.session);
+
+      if (data.advanced) {
+        showToast(`⚡ Avançando para o próximo estudo: "${data.nextPrompt}"`);
+        statusEl.textContent = `Próximo estudo ativado: ${data.nextPrompt}`;
+        await loadQueue();
+        await loadStudySession();
+        return;
+      }
 
       if (justCompleted) {
         const count = data.session.completionCount || 1;
@@ -760,24 +1152,36 @@
 
     saveThemeBtn.addEventListener('click', async () => {
       try {
-        await saveTheme();
+        const activated = await saveTheme();
+        if (activated) await loadStudySession();
+      } catch (err) {
+        statusEl.textContent = `Erro: ${err.message}`;
+      }
+    });
+
+    forceThemeBtn.addEventListener('click', async () => {
+      try {
+        await forceTheme();
         await loadStudySession();
       } catch (err) {
         statusEl.textContent = `Erro: ${err.message}`;
       }
     });
 
-    loadStudyBtn.addEventListener('click', async () => {
+    startStudyBtn.addEventListener('click', async () => {
+      if (studying) return;
       try {
         await loadStudySession();
       } catch (err) {
         resultEl.textContent = `Erro: ${err.message}`;
+        setUILocked(false);
       }
     });
 
     (async function init() {
       try {
         await loadSavedTheme();
+        await loadQueue();
         await loadStudySession();
       } catch (err) {
         statusEl.textContent = `Erro ao iniciar: ${err.message}`;

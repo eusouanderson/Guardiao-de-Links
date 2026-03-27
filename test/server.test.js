@@ -149,7 +149,7 @@ test('POST /study-theme saves the study prompt', async () => {
   }
 });
 
-test('POST /study-theme is blocked until 10 cycles are completed', async () => {
+test('POST /study-theme queues the prompt when cycles are not completed', async () => {
   const server = await startTestServer();
 
   try {
@@ -181,10 +181,14 @@ test('POST /study-theme is blocked until 10 cycles are completed', async () => {
     });
     const payload = await response.json();
     const savedTheme = server.fixture.db.readStudyState();
+    const queue = server.fixture.db.listQueue();
 
-    assert.equal(response.status, 409);
-    assert.match(payload.error, /Conclua 10 ciclos/);
-    assert.match(payload.error, /Faltam 7 ciclo/);
+    assert.equal(response.status, 200);
+    assert.equal(payload.success, true);
+    assert.equal(payload.queued, true);
+    assert.equal(payload.position, 1);
+    assert.equal(queue.length, 1);
+    assert.equal(queue[0].prompt, 'novo tema');
     assert.equal(savedTheme.prompt, 'event loop');
   } finally {
     await server.close();
@@ -362,6 +366,55 @@ test('POST /study-answer unlocks a new prompt after the 10th completed cycle', a
   }
 });
 
+test('POST /study-answer saves a history item when a cycle is completed', async () => {
+  const server = await startTestServer();
+
+  try {
+    server.fixture.db.writeStudyState({
+      prompt: 'event loop',
+      updatedAt: '2026-03-17T00:00:00.000Z',
+      completionCount: 2,
+      lesson: {
+        promptSnapshot: 'event loop',
+        explanation: 'Resumo salvo.',
+        questions: [
+          {
+            id: 1,
+            question: 'Pergunta 1?',
+            options: ['A', 'B', 'C', 'D'],
+            correctOptionIndex: 1,
+            solved: false,
+            selectedOptionIndex: null
+          }
+        ],
+        correctCount: 0,
+        completed: false,
+        generatedAt: '2026-03-17T00:00:00.000Z'
+      }
+    });
+
+    const answerResponse = await fetch(`${server.baseUrl}/study-answer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questionId: 1, optionIndex: 1 })
+    });
+    const answerPayload = await answerResponse.json();
+    const history = server.fixture.db.listStudyHistory();
+
+    assert.equal(answerResponse.status, 200);
+    assert.equal(answerPayload.session.progress.completed, true);
+    assert.equal(answerPayload.session.completionCount, 3);
+    assert.equal(history.length, 1);
+    assert.equal(history[0].promptSnapshot, 'event loop');
+    assert.equal(history[0].cycleNumber, 3);
+    assert.equal(history[0].correctCount, 1);
+    assert.equal(history[0].totalQuestions, 1);
+    assert.ok(history[0].completedAt);
+  } finally {
+    await server.close();
+  }
+});
+
 test('GET /study-session regenerates only after all questions are solved', async () => {
   process.env.GROQ_API_KEY = 'test-key';
   let fetchCalls = 0;
@@ -432,6 +485,21 @@ test('GET /estudos serves the estudos page', async () => {
   }
 });
 
+test('GET /historico-estudos serves the history page', async () => {
+  const server = await startTestServer();
+
+  try {
+    for (const p of ['/historico-estudos', '/historico-estudos.html']) {
+      const response = await fetch(`${server.baseUrl}${p}`);
+      const html = await response.text();
+      assert.equal(response.status, 200, `expected 200 for ${p}`);
+      assert.match(html, /Historico de Estudos/i);
+    }
+  } finally {
+    await server.close();
+  }
+});
+
 test('GET /links.html serves the links page', async () => {
   const server = await startTestServer();
 
@@ -492,6 +560,31 @@ test('GET /study-status returns status without prompt', async () => {
     assert.equal(payload.hasPrompt, false);
     assert.equal(payload.canSaveNewTheme, true);
     assert.equal(payload.completionCount, 0);
+  } finally {
+    await server.close();
+  }
+});
+
+test('GET /study-history returns recorded history rows', async () => {
+  const server = await startTestServer();
+
+  try {
+    server.fixture.db.addStudyHistory({
+      promptSnapshot: 'promises',
+      explanation: 'Resumo',
+      cycleNumber: 1,
+      totalQuestions: 10,
+      correctCount: 10,
+      completedAt: '2026-03-17T00:00:00.000Z'
+    });
+
+    const response = await fetch(`${server.baseUrl}/study-history`);
+    const payload = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.length, 1);
+    assert.equal(payload[0].promptSnapshot, 'promises');
+    assert.equal(payload[0].cycleNumber, 1);
   } finally {
     await server.close();
   }
@@ -782,6 +875,420 @@ test('GET /study-session returns 500 when GROQ_API_KEY is not set', async () => 
     assert.equal(response.status, 500);
     assert.match(payload.details, /GROQ_API_KEY/);
   } finally {
+    await server.close();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Queue feature
+// ---------------------------------------------------------------------------
+
+test('GET /study-queue returns empty array initially', async () => {
+  const server = await startTestServer();
+
+  try {
+    const response = await fetch(`${server.baseUrl}/study-queue`);
+    const payload = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(payload, []);
+  } finally {
+    await server.close();
+  }
+});
+
+test('GET /study-queue returns queued studies', async () => {
+  const server = await startTestServer();
+
+  try {
+    server.fixture.db.enqueueStudy('closures');
+    server.fixture.db.enqueueStudy('promises');
+
+    const response = await fetch(`${server.baseUrl}/study-queue`);
+    const payload = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.length, 2);
+    assert.equal(payload[0].prompt, 'closures');
+    assert.equal(payload[1].prompt, 'promises');
+  } finally {
+    await server.close();
+  }
+});
+
+test('DELETE /study-queue removes a study by id', async () => {
+  const server = await startTestServer();
+
+  try {
+    server.fixture.db.enqueueStudy('closures');
+    server.fixture.db.enqueueStudy('promises');
+    const queue = server.fixture.db.listQueue();
+
+    const response = await fetch(`${server.baseUrl}/study-queue`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: queue[0].id })
+    });
+    const payload = await response.json();
+    const remaining = server.fixture.db.listQueue();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(payload, { success: true });
+    assert.equal(remaining.length, 1);
+    assert.equal(remaining[0].prompt, 'promises');
+  } finally {
+    await server.close();
+  }
+});
+
+test('DELETE /study-queue returns 400 for invalid id', async () => {
+  const server = await startTestServer();
+
+  try {
+    const response = await fetch(`${server.baseUrl}/study-queue`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: 'abc' })
+    });
+    const payload = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.match(payload.error, /ID inválido/);
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /study-queue/move reorders queue items', async () => {
+  const server = await startTestServer();
+
+  try {
+    server.fixture.db.enqueueStudy('closures');
+    server.fixture.db.enqueueStudy('promises');
+    server.fixture.db.enqueueStudy('event loop');
+    const queue = server.fixture.db.listQueue();
+
+    const response = await fetch(`${server.baseUrl}/study-queue/move`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: queue[2].id, direction: 'up' })
+    });
+    const payload = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.success, true);
+    assert.equal(payload.moved, true);
+    assert.deepEqual(
+      payload.queue.map((item) => item.prompt),
+      ['closures', 'event loop', 'promises']
+    );
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /study-queue/move returns 400 for invalid direction', async () => {
+  const server = await startTestServer();
+
+  try {
+    server.fixture.db.enqueueStudy('closures');
+    const queue = server.fixture.db.listQueue();
+
+    const response = await fetch(`${server.baseUrl}/study-queue/move`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: queue[0].id, direction: 'left' })
+    });
+    const payload = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.match(payload.error, /Direção inválida/);
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /study-theme with force=true activates immediately ignoring cycle count', async () => {
+  const server = await startTestServer();
+
+  try {
+    server.fixture.db.writeStudyState({
+      prompt: 'event loop',
+      updatedAt: '2026-03-17T00:00:00.000Z',
+      lesson: null,
+      completionCount: 3
+    });
+
+    const response = await fetch(`${server.baseUrl}/study-theme`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'tema urgente', force: true })
+    });
+    const payload = await response.json();
+    const savedTheme = server.fixture.db.readStudyState();
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.success, true);
+    assert.equal(payload.activated, true);
+    assert.equal(savedTheme.prompt, 'tema urgente');
+    assert.equal(savedTheme.completionCount, 0);
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /study-theme queues multiple prompts in order', async () => {
+  const server = await startTestServer();
+
+  try {
+    server.fixture.db.writeStudyState({
+      prompt: 'event loop',
+      updatedAt: '2026-03-17T00:00:00.000Z',
+      lesson: null,
+      completionCount: 1
+    });
+
+    await fetch(`${server.baseUrl}/study-theme`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'closures' })
+    });
+    await fetch(`${server.baseUrl}/study-theme`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'promises' })
+    });
+    const lastResponse = await fetch(`${server.baseUrl}/study-theme`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'async/await' })
+    });
+    const lastPayload = await lastResponse.json();
+    const queue = server.fixture.db.listQueue();
+
+    assert.equal(lastPayload.position, 3);
+    assert.equal(queue.length, 3);
+    assert.deepEqual(
+      queue.map((r) => r.prompt),
+      ['closures', 'promises', 'async/await']
+    );
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /study-answer auto-advances to next queued study after completing cycles', async () => {
+  const server = await startTestServer();
+
+  try {
+    server.fixture.db.enqueueStudy('promises');
+    server.fixture.db.writeStudyState({
+      prompt: 'event loop',
+      updatedAt: '2026-03-17T00:00:00.000Z',
+      completionCount: 9,
+      lesson: {
+        promptSnapshot: 'event loop',
+        explanation: 'Resumo salvo.',
+        questions: Array.from({ length: 10 }, (_, index) => ({
+          id: index + 1,
+          question: `Pergunta ${index + 1}?`,
+          options: ['A', 'B', 'C', 'D'],
+          correctOptionIndex: 1,
+          solved: index < 9,
+          selectedOptionIndex: index < 9 ? 1 : null
+        })),
+        correctCount: 9,
+        completed: false,
+        generatedAt: '2026-03-17T00:00:00.000Z'
+      }
+    });
+
+    const response = await fetch(`${server.baseUrl}/study-answer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questionId: 10, optionIndex: 1 })
+    });
+    const payload = await response.json();
+    const newState = server.fixture.db.readStudyState();
+    const queue = server.fixture.db.listQueue();
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.advanced, true);
+    assert.equal(payload.nextPrompt, 'promises');
+    assert.equal(payload.session.completionCount, 10);
+    assert.equal(payload.session.progress.completed, true);
+    assert.equal(newState.prompt, 'promises');
+    assert.equal(newState.completionCount, 0);
+    assert.equal(newState.lesson, null);
+    assert.equal(queue.length, 0);
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /study-answer does not auto-advance when queue is empty', async () => {
+  const server = await startTestServer();
+
+  try {
+    server.fixture.db.writeStudyState({
+      prompt: 'event loop',
+      updatedAt: '2026-03-17T00:00:00.000Z',
+      completionCount: 9,
+      lesson: {
+        promptSnapshot: 'event loop',
+        explanation: 'Resumo.',
+        questions: Array.from({ length: 10 }, (_, index) => ({
+          id: index + 1,
+          question: `Pergunta ${index + 1}?`,
+          options: ['A', 'B', 'C', 'D'],
+          correctOptionIndex: 1,
+          solved: index < 9,
+          selectedOptionIndex: index < 9 ? 1 : null
+        })),
+        correctCount: 9,
+        completed: false,
+        generatedAt: '2026-03-17T00:00:00.000Z'
+      }
+    });
+
+    const response = await fetch(`${server.baseUrl}/study-answer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ questionId: 10, optionIndex: 1 })
+    });
+    const payload = await response.json();
+    const state = server.fixture.db.readStudyState();
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.advanced, undefined);
+    assert.equal(state.prompt, 'event loop');
+    assert.equal(state.completionCount, 10);
+  } finally {
+    await server.close();
+  }
+});
+
+test('GET /study-status exposes queueLength', async () => {
+  const server = await startTestServer();
+
+  try {
+    server.fixture.db.enqueueStudy('closures');
+    server.fixture.db.enqueueStudy('promises');
+
+    const response = await fetch(`${server.baseUrl}/study-status`);
+    const payload = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.queueLength, 2);
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /study-queue/organize reorders queue based on IA response', async () => {
+  process.env.GROQ_API_KEY = 'test-key';
+  const server = await startTestServer({
+    fetchImpl: async () => ({
+      ok: true,
+      async json() {
+        return {
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({
+                  orderedIds: [3, 1, 2],
+                  rationale: 'Comecar por fundamentos e depois avançar.'
+                })
+              }
+            }
+          ]
+        };
+      }
+    })
+  });
+
+  try {
+    server.fixture.db.enqueueStudy('Topico 1');
+    server.fixture.db.enqueueStudy('Topico 2');
+    server.fixture.db.enqueueStudy('Topico 3');
+
+    const queue = server.fixture.db.listQueue();
+    const response = await fetch(`${server.baseUrl}/study-queue/organize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    const payload = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.success, true);
+    assert.match(payload.rationale, /fundamentos/i);
+    assert.deepEqual(
+      payload.queue.map((item) => item.id),
+      [queue[2].id, queue[0].id, queue[1].id]
+    );
+  } finally {
+    delete process.env.GROQ_API_KEY;
+    await server.close();
+  }
+});
+
+test('POST /study-queue/organize returns unchanged for queue with less than two items', async () => {
+  const server = await startTestServer();
+
+  try {
+    server.fixture.db.enqueueStudy('Apenas um tema');
+    const response = await fetch(`${server.baseUrl}/study-queue/organize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    const payload = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.success, true);
+    assert.equal(payload.unchanged, true);
+    assert.equal(payload.queue.length, 1);
+  } finally {
+    await server.close();
+  }
+});
+
+test('POST /study-queue/organize returns 500 when IA order is invalid', async () => {
+  process.env.GROQ_API_KEY = 'test-key';
+  const server = await startTestServer({
+    fetchImpl: async () => ({
+      ok: true,
+      async json() {
+        return {
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({ orderedIds: [999, 1], rationale: 'ordem inválida' })
+              }
+            }
+          ]
+        };
+      }
+    })
+  });
+
+  try {
+    server.fixture.db.enqueueStudy('Tema 1');
+    server.fixture.db.enqueueStudy('Tema 2');
+
+    const response = await fetch(`${server.baseUrl}/study-queue/organize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    const payload = await response.json();
+
+    assert.equal(response.status, 500);
+    assert.match(payload.error, /organizar fila com IA/i);
+    assert.match(payload.details, /ordem retornada pela IA é inválida/i);
+  } finally {
+    delete process.env.GROQ_API_KEY;
     await server.close();
   }
 });

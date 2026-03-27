@@ -1,7 +1,7 @@
 {
   "name": "linksaved-simple",
   "version": "1.0.0",
-  "description": "Projeto Node.js minimalista para renderizar uma tela web simples.",
+  "description": "Projeto Node.js minimalista para guardar links e estudar utilizando inteligência artificial.",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",

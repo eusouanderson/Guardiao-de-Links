@@ -24,7 +24,29 @@ const createDatabase = (dbPath) => {
       lesson           TEXT,
       completion_count INTEGER NOT NULL DEFAULT 0
     );
+    CREATE TABLE IF NOT EXISTS study_queue (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      prompt     TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      sort_order REAL NOT NULL DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS study_history (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      prompt_snapshot TEXT    NOT NULL,
+      explanation     TEXT    NOT NULL,
+      cycle_number    INTEGER NOT NULL,
+      total_questions INTEGER NOT NULL,
+      correct_count   INTEGER NOT NULL,
+      completed_at    TEXT    NOT NULL
+    );
   `);
+
+  const queueColumns = db.prepare("PRAGMA table_info('study_queue')").all();
+  const hasSortOrder = queueColumns.some((column) => column.name === 'sort_order');
+  if (!hasSortOrder) {
+    db.exec('ALTER TABLE study_queue ADD COLUMN sort_order REAL NOT NULL DEFAULT 0');
+  }
+  db.exec('UPDATE study_queue SET sort_order = id WHERE sort_order = 0');
 
   if (!dbPath) {
     const linksCount = db.prepare('SELECT COUNT(*) as c FROM links').get().c;
@@ -98,7 +120,147 @@ const createDatabase = (dbPath) => {
 
   const close = () => db.close();
 
-  return { readLinks, addLink, deleteLink, readStudyState, writeStudyState, close };
+  const enqueueStudy = (prompt) => {
+    const nextSortOrder = db
+      .prepare('SELECT COALESCE(MAX(sort_order), 0) + 1 AS nextSortOrder FROM study_queue')
+      .get().nextSortOrder;
+
+    return db.prepare('INSERT INTO study_queue (prompt, created_at, sort_order) VALUES (?, ?, ?)').run(
+      prompt,
+      new Date().toISOString(),
+      nextSortOrder
+    );
+  };
+
+  const dequeueNextStudy = () => {
+    const row = db.prepare('SELECT * FROM study_queue ORDER BY sort_order, id LIMIT 1').get();
+    if (!row) return null;
+    db.prepare('DELETE FROM study_queue WHERE id = ?').run(row.id);
+    return row.prompt;
+  };
+
+  const listQueue = () =>
+    db.prepare('SELECT id, prompt, created_at AS createdAt FROM study_queue ORDER BY sort_order, id').all();
+
+  const deleteFromQueue = (id) =>
+    db.prepare('DELETE FROM study_queue WHERE id = ?').run(id);
+
+  const moveQueueItem = (id, direction) => {
+    const current = db.prepare('SELECT id, sort_order FROM study_queue WHERE id = ?').get(id);
+    if (!current) {
+      return false;
+    }
+
+    const neighbor = direction === 'up'
+      ? db
+        .prepare(
+          `SELECT id, sort_order
+           FROM study_queue
+           WHERE sort_order < ? OR (sort_order = ? AND id < ?)
+           ORDER BY sort_order DESC, id DESC
+           LIMIT 1`
+        )
+        .get(current.sort_order, current.sort_order, current.id)
+      : db
+        .prepare(
+          `SELECT id, sort_order
+           FROM study_queue
+           WHERE sort_order > ? OR (sort_order = ? AND id > ?)
+           ORDER BY sort_order ASC, id ASC
+           LIMIT 1`
+        )
+        .get(current.sort_order, current.sort_order, current.id);
+
+    if (!neighbor) {
+      return false;
+    }
+
+    db.transaction(() => {
+      db.prepare('UPDATE study_queue SET sort_order = ? WHERE id = ?').run(neighbor.sort_order, current.id);
+      db.prepare('UPDATE study_queue SET sort_order = ? WHERE id = ?').run(current.sort_order, neighbor.id);
+    })();
+
+    return true;
+  };
+
+  const reorderQueue = (orderedIds) => {
+    if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+      return false;
+    }
+
+    const queueRows = db.prepare('SELECT id FROM study_queue').all();
+    const queueIds = queueRows.map((row) => row.id);
+
+    if (queueIds.length !== orderedIds.length) {
+      return false;
+    }
+
+    const queueSet = new Set(queueIds);
+    const providedSet = new Set(orderedIds);
+    if (queueSet.size !== providedSet.size) {
+      return false;
+    }
+
+    for (const id of orderedIds) {
+      if (!queueSet.has(id)) {
+        return false;
+      }
+    }
+
+    db.transaction(() => {
+      const update = db.prepare('UPDATE study_queue SET sort_order = ? WHERE id = ?');
+      orderedIds.forEach((id, index) => {
+        update.run(index + 1, id);
+      });
+    })();
+
+    return true;
+  };
+
+  const addStudyHistory = (entry) =>
+    db.prepare(
+      `INSERT INTO study_history
+      (prompt_snapshot, explanation, cycle_number, total_questions, correct_count, completed_at)
+      VALUES (?, ?, ?, ?, ?, ?)`
+    ).run(
+      entry.promptSnapshot,
+      entry.explanation,
+      entry.cycleNumber,
+      entry.totalQuestions,
+      entry.correctCount,
+      entry.completedAt
+    );
+
+  const listStudyHistory = () =>
+    db.prepare(
+      `SELECT
+        id,
+        prompt_snapshot AS promptSnapshot,
+        explanation,
+        cycle_number AS cycleNumber,
+        total_questions AS totalQuestions,
+        correct_count AS correctCount,
+        completed_at AS completedAt
+      FROM study_history
+      ORDER BY id DESC`
+    ).all();
+
+  return {
+    readLinks,
+    addLink,
+    deleteLink,
+    readStudyState,
+    writeStudyState,
+    enqueueStudy,
+    dequeueNextStudy,
+    listQueue,
+    deleteFromQueue,
+    moveQueueItem,
+    reorderQueue,
+    addStudyHistory,
+    listStudyHistory,
+    close
+  };
 };
 
 module.exports = { createDatabase };

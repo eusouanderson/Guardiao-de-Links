@@ -162,6 +162,31 @@ const validateGeneratedQuestions = (questions) => {
   });
 };
 
+const validateQueueOrder = (orderedIds, queue) => {
+  if (!Array.isArray(orderedIds)) {
+    return false;
+  }
+
+  const queueIds = queue.map((item) => item.id);
+  if (queueIds.length !== orderedIds.length) {
+    return false;
+  }
+
+  const queueSet = new Set(queueIds);
+  const orderedSet = new Set(orderedIds);
+  if (queueSet.size !== orderedSet.size) {
+    return false;
+  }
+
+  for (const id of orderedIds) {
+    if (!Number.isInteger(id) || !queueSet.has(id)) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
 const createApp = (options = {}) => {
   const publicDir = options.publicDir || DEFAULT_PUBLIC_DIR;
   const db = options.db || createDatabase();
@@ -303,6 +328,74 @@ const createApp = (options = {}) => {
     return { studyState: updatedState, generated: true };
   };
 
+  const organizeQueueWithAI = async (queue, activePrompt) => {
+    const apiKey = process.env.GROQ_API_KEY || process.env.GROQ_KEY || process.env.API_KEY;
+    if (!apiKey) {
+      throw new Error('GROQ_API_KEY não foi configurada no .env');
+    }
+
+    const response = await fetchImpl(GROQ_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: groqModel,
+        temperature: 0.2,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'Você é um tutor especialista em aprendizagem eficiente. Retorne apenas JSON válido, sem markdown, no formato {"orderedIds":[1,2],"rationale":"texto curto"}. Reordene os IDs em uma sequência pedagógica baseada em progressão de dificuldade, fundamentos antes de tópicos avançados e encadeamento de pré-requisitos.'
+          },
+          {
+            role: 'user',
+            content: JSON.stringify({
+              activePrompt,
+              queue: queue.map((item) => ({
+                id: item.id,
+                prompt: item.prompt,
+                createdAt: item.createdAt
+              }))
+            })
+          }
+        ]
+      })
+    });
+
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      const message = data?.error?.message || 'Falha ao consultar a API do Groq';
+      throw new Error(message);
+    }
+
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content) {
+      throw new Error('A IA não retornou conteúdo para reorganizar a fila.');
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(extractJsonFromModel(content));
+    } catch {
+      throw new Error('A IA retornou formato inválido para organizar a fila.');
+    }
+
+    const orderedIds = Array.isArray(parsed?.orderedIds)
+      ? parsed.orderedIds.map((id) => Number(id))
+      : null;
+
+    if (!validateQueueOrder(orderedIds, queue)) {
+      throw new Error('A ordem retornada pela IA é inválida para a fila atual.');
+    }
+
+    return {
+      orderedIds,
+      rationale: typeof parsed?.rationale === 'string' ? parsed.rationale.trim() : ''
+    };
+  };
+
   const getStudyStatus = (studyState) => {
     const lesson = studyState.lesson;
     const hasPrompt = Boolean(studyState.prompt);
@@ -322,6 +415,7 @@ const createApp = (options = {}) => {
       completionCount,
       requiredCompletionCount: REQUIRED_COMPLETION_COUNT,
       remainingCycles,
+      queueLength: db.listQueue().length,
       progress: {
         correctCount,
         totalQuestions,
@@ -348,6 +442,11 @@ const createApp = (options = {}) => {
       return;
     }
 
+    if (route === '/historico-estudos' || route === '/historico-estudos.html') {
+      await serveHtml(res, 'historico-estudos.html');
+      return;
+    }
+
     if (route === '/study-theme' && req.method === 'GET') {
       const studyState = await readStudyState();
       sendJson(res, 200, {
@@ -363,6 +462,7 @@ const createApp = (options = {}) => {
         const body = await readRequestBody(req);
         const parsed = JSON.parse(body || '{}');
         const prompt = typeof parsed.prompt === 'string' ? parsed.prompt.trim() : '';
+        const force = Boolean(parsed.force);
         const currentState = await readStudyState();
         const currentStatus = getStudyStatus(currentState);
 
@@ -371,22 +471,27 @@ const createApp = (options = {}) => {
           return;
         }
 
-        if (!currentStatus.canSaveNewTheme) {
-          sendJson(res, 409, {
-            error: `Conclua ${currentStatus.requiredCompletionCount} ciclos do tema atual antes de salvar um novo tema. Faltam ${currentStatus.remainingCycles} ciclo(s).`
+        if (force || currentStatus.canSaveNewTheme) {
+          const saved = await saveStudyTheme(prompt);
+          sendJson(res, 200, {
+            success: true,
+            activated: true,
+            data: {
+              prompt: saved.prompt,
+              updatedAt: saved.updatedAt,
+              status: getStudyStatus(saved)
+            }
           });
-          return;
+        } else {
+          db.enqueueStudy(prompt);
+          const queue = db.listQueue();
+          sendJson(res, 200, {
+            success: true,
+            queued: true,
+            position: queue.length,
+            queue
+          });
         }
-
-        const saved = await saveStudyTheme(prompt);
-        sendJson(res, 200, {
-          success: true,
-          data: {
-            prompt: saved.prompt,
-            updatedAt: saved.updatedAt,
-            status: getStudyStatus(saved)
-          }
-        });
       } catch (error) {
         sendJson(res, 400, { error: 'Dados inválidos', details: error.message });
       }
@@ -396,6 +501,11 @@ const createApp = (options = {}) => {
     if (route === '/study-status' && req.method === 'GET') {
       const studyState = await readStudyState();
       sendJson(res, 200, getStudyStatus(studyState));
+      return;
+    }
+
+    if (route === '/study-history' && req.method === 'GET') {
+      sendJson(res, 200, db.listStudyHistory());
       return;
     }
 
@@ -483,13 +593,39 @@ const createApp = (options = {}) => {
 
         if (justCompleted) {
           studyState.completionCount = (studyState.completionCount || 0) + 1;
+          db.addStudyHistory({
+            promptSnapshot: studyState.lesson.promptSnapshot || studyState.prompt,
+            explanation: studyState.lesson.explanation || '',
+            cycleNumber: studyState.completionCount,
+            totalQuestions: studyState.lesson.questions.length,
+            correctCount: studyState.lesson.correctCount,
+            completedAt: new Date().toISOString()
+          });
         }
 
         await writeStudyState(studyState);
 
+        let advanced = false;
+        let nextPrompt = null;
+
+        if (justCompleted && studyState.completionCount >= REQUIRED_COMPLETION_COUNT) {
+          const dequeued = db.dequeueNextStudy();
+          if (dequeued) {
+            await writeStudyState({
+              prompt: dequeued,
+              updatedAt: new Date().toISOString(),
+              lesson: null,
+              completionCount: 0
+            });
+            advanced = true;
+            nextPrompt = dequeued;
+          }
+        }
+
         sendJson(res, 200, {
           success: true,
           correct,
+          ...(advanced ? { advanced: true, nextPrompt } : {}),
           session: buildSessionPayload(studyState)
         });
       } catch (error) {
@@ -501,6 +637,87 @@ const createApp = (options = {}) => {
     if (route === '/links' && req.method === 'GET') {
       const links = await readLinks();
       sendJson(res, 200, links);
+      return;
+    }
+
+    if (route === '/study-queue' && req.method === 'GET') {
+      sendJson(res, 200, db.listQueue());
+      return;
+    }
+
+    if (route === '/study-queue/move' && req.method === 'POST') {
+      try {
+        const body = await readRequestBody(req);
+        const parsed = JSON.parse(body || '{}');
+        const id = Number(parsed.id);
+        const direction = parsed.direction === 'up' || parsed.direction === 'down'
+          ? parsed.direction
+          : null;
+
+        if (!Number.isInteger(id) || id <= 0) {
+          sendJson(res, 400, { error: 'ID inválido.' });
+          return;
+        }
+
+        if (!direction) {
+          sendJson(res, 400, { error: 'Direção inválida. Use "up" ou "down".' });
+          return;
+        }
+
+        const moved = db.moveQueueItem(id, direction);
+        sendJson(res, 200, {
+          success: true,
+          moved,
+          queue: db.listQueue()
+        });
+      } catch (error) {
+        sendJson(res, 400, { error: 'Dados inválidos', details: error.message });
+      }
+      return;
+    }
+
+    if (route === '/study-queue/organize' && req.method === 'POST') {
+      try {
+        const queue = db.listQueue();
+        if (queue.length < 2) {
+          sendJson(res, 200, {
+            success: true,
+            unchanged: true,
+            message: 'A fila precisa de pelo menos 2 itens para ser reorganizada.',
+            queue
+          });
+          return;
+        }
+
+        const studyState = await readStudyState();
+        const result = await organizeQueueWithAI(queue, studyState.prompt || '');
+        db.reorderQueue(result.orderedIds);
+
+        sendJson(res, 200, {
+          success: true,
+          rationale: result.rationale,
+          queue: db.listQueue()
+        });
+      } catch (error) {
+        sendJson(res, 500, { error: 'Erro ao organizar fila com IA', details: error.message });
+      }
+      return;
+    }
+
+    if (route === '/study-queue' && req.method === 'DELETE') {
+      try {
+        const body = await readRequestBody(req);
+        const parsed = JSON.parse(body || '{}');
+        const id = Number(parsed.id);
+        if (!Number.isInteger(id) || id <= 0) {
+          sendJson(res, 400, { error: 'ID inválido.' });
+          return;
+        }
+        db.deleteFromQueue(id);
+        sendJson(res, 200, { success: true });
+      } catch (error) {
+        sendJson(res, 400, { error: 'Dados inválidos', details: error.message });
+      }
       return;
     }
 
@@ -576,5 +793,6 @@ module.exports = {
   normalizeStudyState,
   buildSessionPayload,
   extractJsonFromModel,
-  validateGeneratedQuestions
+  validateGeneratedQuestions,
+  validateQueueOrder
 };
