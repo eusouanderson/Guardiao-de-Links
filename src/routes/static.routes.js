@@ -26,7 +26,7 @@ const createStaticRoutes = ({ staticController }) => {
       return true;
     }
 
-    if (/^\/[\w.-]+\.(js|css|png|jpg|jpeg|svg|ico)$/.test(route)) {
+    if (/^\/[\w./-]+\.(js|css|png|jpg|jpeg|svg|ico)$/.test(route)) {
       await staticController.serveStaticAsset(res, route);
       return true;
     }

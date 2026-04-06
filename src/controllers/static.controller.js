@@ -20,9 +20,15 @@ const createStaticController = ({ publicDir, sendText }) => {
   };
 
   const serveStaticAsset = async (res, route) => {
-    const safeName = path.basename(route);
-    const filePath = path.join(publicDir, safeName);
-    const extension = path.extname(safeName);
+    const normalizedRoute = path.normalize(route).replace(/^[/\\]+/, '');
+    if (!normalizedRoute || normalizedRoute.startsWith('..')) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end();
+      return;
+    }
+
+    const filePath = path.join(publicDir, normalizedRoute);
+    const extension = path.extname(filePath);
     const mimeType = MIME_TYPES[extension] || 'application/octet-stream';
 
     try {
