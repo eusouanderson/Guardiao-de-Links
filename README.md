@@ -1,63 +1,92 @@
 # LinkSaved
 
-Aplicação Node.js simples para salvar links e consultar uma área de estudos com IA.
+Aplicação Node.js minimalista para salvar links e estudar temas com apoio de IA.
 
 ## Como rodar
 
-### Via Node.js
-
-1. Instale as dependências:
+1. Instale dependências:
 
 ```bash
 npm install
 ```
 
-2. Inicie em desenvolvimento:
+2. Rode em desenvolvimento:
 
 ```bash
 npm run dev
 ```
 
-3. Ou inicie em modo normal:
+3. Rode em modo normal:
 
 ```bash
 npm start
 ```
 
-4. Acesse http://localhost:8000 no navegador.
+4. Acesse http://localhost:8000.
 
-### Via Docker Compose
-
-1. Execute:
+## Testes
 
 ```bash
-docker compose up --build -d
+npm test
 ```
 
-2. Acesse http://localhost:8000 no navegador.
-
-## Estrutura do projeto
+## Nova arquitetura
 
 ```text
-.
-├── src
-│   ├── data
-│   │   ├── links.json
-│   │   └── study-theme.json
-│   ├── public
-│   │   ├── estudos.html
-│   │   ├── link-da-web.png
-│   │   └── links.html
-│   └── server.js
-├── Dockerfile
-├── docker-compose.yml
-├── package.json
-└── README.md
+src/
+	config/
+		constants.js
+		env.js
+	controllers/
+		links.controller.js
+		links.controller.test.js
+		static.controller.js
+		study.controller.js
+	database/
+		db.js
+		db.test.js
+	repositories/
+		links.repository.js
+		links.repository.test.js
+		study.repository.js
+		study.repository.test.js
+	routes/
+		index.js
+		links.routes.js
+		links.routes.test.js
+		static.routes.js
+		study.routes.js
+		study.routes.test.js
+	server/
+		bootstrap.js
+		index.js
+		index.test.js
+	services/
+		ai.service.js
+		links.service.js
+		links.service.test.js
+		study.service.js
+		study.service.test.js
+	utils/
+		http.utils.js
+		study.utils.js
+		study.utils.test.js
+	data/
+	public/
+	db.js
+	server.js
 ```
+
+## Decisões de refatoração
+
+- A camada HTTP foi separada em `routes` e `controllers`.
+- Regras de negócio ficaram em `services`.
+- SQL e persistência ficaram centralizados em `database` e `repositories`.
+- Acesso a variáveis de ambiente foi isolado em `config/env.js`.
+- Funções puras foram movidas para `utils/study.utils.js` e continuam exportadas por `src/server.js` para compatibilidade.
+- Os arquivos `src/server.js` e `src/db.js` foram mantidos como wrappers compatíveis para não quebrar integrações existentes.
 
 ## Observações
 
-- A chave da API do Groq deve estar no .env.
-- O servidor principal agora fica em src/server.js.
-- Os arquivos estáticos ficam em src/public.
-- Os dados persistidos ficam em src/data.
+- Defina `GROQ_API_KEY` no `.env` para funcionalidades de IA.
+- O projeto continua sem frameworks pesados e sem ORM.

@@ -16,7 +16,7 @@ async function createFixture() {
   return {
     tempRoot,
     db,
-    publicDir: path.join(__dirname, '..', 'src', 'public')
+    publicDir: path.join(__dirname, '..', 'src', 'public'),
   };
 }
 
@@ -26,8 +26,8 @@ function createGroqPayload() {
     questions: Array.from({ length: 10 }, (_, index) => ({
       question: `Pergunta ${index + 1}?`,
       options: ['Opcao A', 'Opcao B', 'Opcao C', 'Opcao D'],
-      correctOptionIndex: 1
-    }))
+      correctOptionIndex: 1,
+    })),
   };
 }
 
@@ -36,7 +36,7 @@ async function startTestServer(overrides = {}) {
   const app = createApp({
     publicDir: fixture.publicDir,
     db: fixture.db,
-    ...overrides
+    ...overrides,
   });
 
   await new Promise((resolve) => app.listen(0, resolve));
@@ -48,9 +48,11 @@ async function startTestServer(overrides = {}) {
     baseUrl: `http://127.0.0.1:${address.port}`,
     async close() {
       fixture.db.close();
-      await new Promise((resolve, reject) => app.close((error) => (error ? reject(error) : resolve())));
+      await new Promise((resolve, reject) =>
+        app.close((error) => (error ? reject(error) : resolve()))
+      );
       await fs.rm(fixture.tempRoot, { recursive: true, force: true });
-    }
+    },
   };
 }
 
@@ -90,7 +92,7 @@ test('POST /links persists a new link', async () => {
     const response = await fetch(`${server.baseUrl}/links`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Node', url: 'https://nodejs.org' })
+      body: JSON.stringify({ name: 'Node', url: 'https://nodejs.org' }),
     });
     const payload = await response.json();
     const savedLinks = server.fixture.db.readLinks();
@@ -111,7 +113,7 @@ test('DELETE /links removes a persisted link', async () => {
     const response = await fetch(`${server.baseUrl}/links`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: 'https://example.com' })
+      body: JSON.stringify({ url: 'https://example.com' }),
     });
     const payload = await response.json();
     const savedLinks = server.fixture.db.readLinks();
@@ -131,7 +133,7 @@ test('POST /study-theme saves the study prompt', async () => {
     const response = await fetch(`${server.baseUrl}/study-theme`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: 'event loop e promises' })
+      body: JSON.stringify({ prompt: 'event loop e promises' }),
     });
     const payload = await response.json();
     const savedTheme = server.fixture.db.readStudyState();
@@ -165,19 +167,19 @@ test('POST /study-theme queues the prompt when cycles are not completed', async 
           options: ['A', 'B', 'C', 'D'],
           correctOptionIndex: 1,
           solved: index < 3,
-          selectedOptionIndex: index < 3 ? 1 : null
+          selectedOptionIndex: index < 3 ? 1 : null,
         })),
         correctCount: 3,
         completed: false,
-        generatedAt: '2026-03-17T00:00:00.000Z'
+        generatedAt: '2026-03-17T00:00:00.000Z',
       },
-      completionCount: 3
+      completionCount: 3,
     });
 
     const response = await fetch(`${server.baseUrl}/study-theme`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: 'novo tema' })
+      body: JSON.stringify({ prompt: 'novo tema' }),
     });
     const payload = await response.json();
     const savedTheme = server.fixture.db.readStudyState();
@@ -218,10 +220,10 @@ test('GET /study-session generates explanation and 10 questions only once while 
       async json() {
         fetchCalls += 1;
         return {
-          choices: [{ message: { content: JSON.stringify(createGroqPayload()) } }]
+          choices: [{ message: { content: JSON.stringify(createGroqPayload()) } }],
         };
-      }
-    })
+      },
+    }),
   });
 
   try {
@@ -229,7 +231,7 @@ test('GET /study-session generates explanation and 10 questions only once while 
       prompt: 'microtasks',
       updatedAt: '2026-03-17T00:00:00.000Z',
       lesson: null,
-      completionCount: 0
+      completionCount: 0,
     });
 
     const firstResponse = await fetch(`${server.baseUrl}/study-session`);
@@ -261,7 +263,7 @@ test('POST /study-answer marks progress and GET /study-status exposes pending st
         options: ['A', 'B', 'C', 'D'],
         correctOptionIndex: 2,
         solved: false,
-        selectedOptionIndex: null
+        selectedOptionIndex: null,
       },
       {
         id: 2,
@@ -269,12 +271,12 @@ test('POST /study-answer marks progress and GET /study-status exposes pending st
         options: ['A', 'B', 'C', 'D'],
         correctOptionIndex: 0,
         solved: false,
-        selectedOptionIndex: null
-      }
+        selectedOptionIndex: null,
+      },
     ],
     correctCount: 0,
     completed: false,
-    generatedAt: '2026-03-17T00:00:00.000Z'
+    generatedAt: '2026-03-17T00:00:00.000Z',
   };
   const server = await startTestServer();
 
@@ -283,19 +285,19 @@ test('POST /study-answer marks progress and GET /study-status exposes pending st
       prompt: 'event loop',
       updatedAt: '2026-03-17T00:00:00.000Z',
       lesson,
-      completionCount: 0
+      completionCount: 0,
     });
 
     const wrongResponse = await fetch(`${server.baseUrl}/study-answer`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questionId: 1, optionIndex: 1 })
+      body: JSON.stringify({ questionId: 1, optionIndex: 1 }),
     });
     const wrongPayload = await wrongResponse.json();
     const correctResponse = await fetch(`${server.baseUrl}/study-answer`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questionId: 1, optionIndex: 2 })
+      body: JSON.stringify({ questionId: 1, optionIndex: 2 }),
     });
     const correctPayload = await correctResponse.json();
     const statusResponse = await fetch(`${server.baseUrl}/study-status`);
@@ -332,24 +334,24 @@ test('POST /study-answer unlocks a new prompt after the 10th completed cycle', a
           options: ['A', 'B', 'C', 'D'],
           correctOptionIndex: 1,
           solved: index < 9,
-          selectedOptionIndex: index < 9 ? 1 : null
+          selectedOptionIndex: index < 9 ? 1 : null,
         })),
         correctCount: 9,
         completed: false,
-        generatedAt: '2026-03-17T00:00:00.000Z'
-      }
+        generatedAt: '2026-03-17T00:00:00.000Z',
+      },
     });
 
     const answerResponse = await fetch(`${server.baseUrl}/study-answer`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questionId: 10, optionIndex: 1 })
+      body: JSON.stringify({ questionId: 10, optionIndex: 1 }),
     });
     const answerPayload = await answerResponse.json();
     const saveResponse = await fetch(`${server.baseUrl}/study-theme`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: 'novo tema liberado' })
+      body: JSON.stringify({ prompt: 'novo tema liberado' }),
     });
     const savePayload = await saveResponse.json();
     const savedTheme = server.fixture.db.readStudyState();
@@ -384,19 +386,19 @@ test('POST /study-answer saves a history item when a cycle is completed', async 
             options: ['A', 'B', 'C', 'D'],
             correctOptionIndex: 1,
             solved: false,
-            selectedOptionIndex: null
-          }
+            selectedOptionIndex: null,
+          },
         ],
         correctCount: 0,
         completed: false,
-        generatedAt: '2026-03-17T00:00:00.000Z'
-      }
+        generatedAt: '2026-03-17T00:00:00.000Z',
+      },
     });
 
     const answerResponse = await fetch(`${server.baseUrl}/study-answer`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questionId: 1, optionIndex: 1 })
+      body: JSON.stringify({ questionId: 1, optionIndex: 1 }),
     });
     const answerPayload = await answerResponse.json();
     const history = server.fixture.db.listStudyHistory();
@@ -424,10 +426,10 @@ test('GET /study-session regenerates only after all questions are solved', async
       async json() {
         fetchCalls += 1;
         return {
-          choices: [{ message: { content: JSON.stringify(createGroqPayload()) } }]
+          choices: [{ message: { content: JSON.stringify(createGroqPayload()) } }],
         };
-      }
-    })
+      },
+    }),
   });
 
   try {
@@ -443,13 +445,13 @@ test('GET /study-session regenerates only after all questions are solved', async
           options: ['A', 'B', 'C', 'D'],
           correctOptionIndex: 1,
           solved: true,
-          selectedOptionIndex: 1
+          selectedOptionIndex: 1,
         })),
         correctCount: 10,
         completed: true,
-        generatedAt: '2026-03-17T00:00:00.000Z'
+        generatedAt: '2026-03-17T00:00:00.000Z',
       },
-      completionCount: 4
+      completionCount: 4,
     });
 
     const response = await fetch(`${server.baseUrl}/study-session`);
@@ -532,7 +534,7 @@ test('GET /study-theme returns current prompt and status', async () => {
       prompt: 'closures',
       updatedAt: '2026-01-01T00:00:00.000Z',
       lesson: null,
-      completionCount: 2
+      completionCount: 2,
     });
 
     const response = await fetch(`${server.baseUrl}/study-theme`);
@@ -575,7 +577,7 @@ test('GET /study-history returns recorded history rows', async () => {
       cycleNumber: 1,
       totalQuestions: 10,
       correctCount: 10,
-      completedAt: '2026-03-17T00:00:00.000Z'
+      completedAt: '2026-03-17T00:00:00.000Z',
     });
 
     const response = await fetch(`${server.baseUrl}/study-history`);
@@ -597,7 +599,7 @@ test('POST /study-theme returns 400 when prompt is empty', async () => {
     const response = await fetch(`${server.baseUrl}/study-theme`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: '   ' })
+      body: JSON.stringify({ prompt: '   ' }),
     });
     const payload = await response.json();
 
@@ -615,7 +617,7 @@ test('POST /study-theme returns 400 when body is invalid JSON', async () => {
     const response = await fetch(`${server.baseUrl}/study-theme`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: 'not-json'
+      body: 'not-json',
     });
     const payload = await response.json();
 
@@ -647,8 +649,8 @@ test('GET /study-explain returns explanation when session is active', async () =
       ok: true,
       async json() {
         return { choices: [{ message: { content: JSON.stringify(createGroqPayload()) } }] };
-      }
-    })
+      },
+    }),
   });
 
   try {
@@ -656,7 +658,7 @@ test('GET /study-explain returns explanation when session is active', async () =
       prompt: 'closures',
       updatedAt: '2026-01-01T00:00:00.000Z',
       lesson: null,
-      completionCount: 0
+      completionCount: 0,
     });
 
     const response = await fetch(`${server.baseUrl}/study-explain`);
@@ -679,7 +681,7 @@ test('POST /study-answer returns 400 when no active session exists', async () =>
     const response = await fetch(`${server.baseUrl}/study-answer`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questionId: 1, optionIndex: 0 })
+      body: JSON.stringify({ questionId: 1, optionIndex: 0 }),
     });
     const payload = await response.json();
 
@@ -701,19 +703,26 @@ test('POST /study-answer returns 404 when question is not found', async () => {
         promptSnapshot: 'event loop',
         explanation: 'Exp.',
         questions: [
-          { id: 1, question: 'Q?', options: ['A', 'B', 'C', 'D'], correctOptionIndex: 0, solved: false, selectedOptionIndex: null }
+          {
+            id: 1,
+            question: 'Q?',
+            options: ['A', 'B', 'C', 'D'],
+            correctOptionIndex: 0,
+            solved: false,
+            selectedOptionIndex: null,
+          },
         ],
         correctCount: 0,
         completed: false,
-        generatedAt: '2026-01-01T00:00:00.000Z'
+        generatedAt: '2026-01-01T00:00:00.000Z',
       },
-      completionCount: 0
+      completionCount: 0,
     });
 
     const response = await fetch(`${server.baseUrl}/study-answer`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questionId: 999, optionIndex: 0 })
+      body: JSON.stringify({ questionId: 999, optionIndex: 0 }),
     });
     const payload = await response.json();
 
@@ -735,20 +744,27 @@ test('POST /study-answer returns 400 for invalid optionIndex', async () => {
         promptSnapshot: 'event loop',
         explanation: 'Exp.',
         questions: [
-          { id: 1, question: 'Q?', options: ['A', 'B', 'C', 'D'], correctOptionIndex: 0, solved: false, selectedOptionIndex: null }
+          {
+            id: 1,
+            question: 'Q?',
+            options: ['A', 'B', 'C', 'D'],
+            correctOptionIndex: 0,
+            solved: false,
+            selectedOptionIndex: null,
+          },
         ],
         correctCount: 0,
         completed: false,
-        generatedAt: '2026-01-01T00:00:00.000Z'
+        generatedAt: '2026-01-01T00:00:00.000Z',
       },
-      completionCount: 0
+      completionCount: 0,
     });
 
     for (const bad of [4, -1]) {
       const response = await fetch(`${server.baseUrl}/study-answer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questionId: 1, optionIndex: bad })
+        body: JSON.stringify({ questionId: 1, optionIndex: bad }),
       });
       const payload = await response.json();
       assert.equal(response.status, 400, `expected 400 for optionIndex=${bad}`);
@@ -770,19 +786,26 @@ test('POST /study-answer returns alreadySolved=true when question was already co
         promptSnapshot: 'event loop',
         explanation: 'Exp.',
         questions: [
-          { id: 1, question: 'Q?', options: ['A', 'B', 'C', 'D'], correctOptionIndex: 0, solved: true, selectedOptionIndex: 0 }
+          {
+            id: 1,
+            question: 'Q?',
+            options: ['A', 'B', 'C', 'D'],
+            correctOptionIndex: 0,
+            solved: true,
+            selectedOptionIndex: 0,
+          },
         ],
         correctCount: 1,
         completed: true,
-        generatedAt: '2026-01-01T00:00:00.000Z'
+        generatedAt: '2026-01-01T00:00:00.000Z',
       },
-      completionCount: 1
+      completionCount: 1,
     });
 
     const response = await fetch(`${server.baseUrl}/study-answer`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questionId: 1, optionIndex: 0 })
+      body: JSON.stringify({ questionId: 1, optionIndex: 0 }),
     });
     const payload = await response.json();
 
@@ -802,8 +825,8 @@ test('GET /study-session returns 500 when Groq API returns a non-ok response', a
       ok: false,
       async json() {
         return { error: { message: 'Rate limit exceeded' } };
-      }
-    })
+      },
+    }),
   });
 
   try {
@@ -811,7 +834,7 @@ test('GET /study-session returns 500 when Groq API returns a non-ok response', a
       prompt: 'closures',
       updatedAt: '2026-01-01T00:00:00.000Z',
       lesson: null,
-      completionCount: 0
+      completionCount: 0,
     });
 
     const response = await fetch(`${server.baseUrl}/study-session`);
@@ -832,8 +855,8 @@ test('GET /study-session returns 500 when Groq API returns invalid JSON structur
       ok: true,
       async json() {
         return { choices: [{ message: { content: 'isso nao e json valido { ' } }] };
-      }
-    })
+      },
+    }),
   });
 
   try {
@@ -841,7 +864,7 @@ test('GET /study-session returns 500 when Groq API returns invalid JSON structur
       prompt: 'closures',
       updatedAt: '2026-01-01T00:00:00.000Z',
       lesson: null,
-      completionCount: 0
+      completionCount: 0,
     });
 
     const response = await fetch(`${server.baseUrl}/study-session`);
@@ -866,7 +889,7 @@ test('GET /study-session returns 500 when GROQ_API_KEY is not set', async () => 
       prompt: 'closures',
       updatedAt: '2026-01-01T00:00:00.000Z',
       lesson: null,
-      completionCount: 0
+      completionCount: 0,
     });
 
     const response = await fetch(`${server.baseUrl}/study-session`);
@@ -927,7 +950,7 @@ test('DELETE /study-queue removes a study by id', async () => {
     const response = await fetch(`${server.baseUrl}/study-queue`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: queue[0].id })
+      body: JSON.stringify({ id: queue[0].id }),
     });
     const payload = await response.json();
     const remaining = server.fixture.db.listQueue();
@@ -948,7 +971,7 @@ test('DELETE /study-queue returns 400 for invalid id', async () => {
     const response = await fetch(`${server.baseUrl}/study-queue`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: 'abc' })
+      body: JSON.stringify({ id: 'abc' }),
     });
     const payload = await response.json();
 
@@ -971,7 +994,7 @@ test('POST /study-queue/move reorders queue items', async () => {
     const response = await fetch(`${server.baseUrl}/study-queue/move`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: queue[2].id, direction: 'up' })
+      body: JSON.stringify({ id: queue[2].id, direction: 'up' }),
     });
     const payload = await response.json();
 
@@ -997,7 +1020,7 @@ test('POST /study-queue/move returns 400 for invalid direction', async () => {
     const response = await fetch(`${server.baseUrl}/study-queue/move`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: queue[0].id, direction: 'left' })
+      body: JSON.stringify({ id: queue[0].id, direction: 'left' }),
     });
     const payload = await response.json();
 
@@ -1016,13 +1039,13 @@ test('POST /study-theme with force=true activates immediately ignoring cycle cou
       prompt: 'event loop',
       updatedAt: '2026-03-17T00:00:00.000Z',
       lesson: null,
-      completionCount: 3
+      completionCount: 3,
     });
 
     const response = await fetch(`${server.baseUrl}/study-theme`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: 'tema urgente', force: true })
+      body: JSON.stringify({ prompt: 'tema urgente', force: true }),
     });
     const payload = await response.json();
     const savedTheme = server.fixture.db.readStudyState();
@@ -1045,23 +1068,23 @@ test('POST /study-theme queues multiple prompts in order', async () => {
       prompt: 'event loop',
       updatedAt: '2026-03-17T00:00:00.000Z',
       lesson: null,
-      completionCount: 1
+      completionCount: 1,
     });
 
     await fetch(`${server.baseUrl}/study-theme`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: 'closures' })
+      body: JSON.stringify({ prompt: 'closures' }),
     });
     await fetch(`${server.baseUrl}/study-theme`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: 'promises' })
+      body: JSON.stringify({ prompt: 'promises' }),
     });
     const lastResponse = await fetch(`${server.baseUrl}/study-theme`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: 'async/await' })
+      body: JSON.stringify({ prompt: 'async/await' }),
     });
     const lastPayload = await lastResponse.json();
     const queue = server.fixture.db.listQueue();
@@ -1095,18 +1118,18 @@ test('POST /study-answer auto-advances to next queued study after completing cyc
           options: ['A', 'B', 'C', 'D'],
           correctOptionIndex: 1,
           solved: index < 9,
-          selectedOptionIndex: index < 9 ? 1 : null
+          selectedOptionIndex: index < 9 ? 1 : null,
         })),
         correctCount: 9,
         completed: false,
-        generatedAt: '2026-03-17T00:00:00.000Z'
-      }
+        generatedAt: '2026-03-17T00:00:00.000Z',
+      },
     });
 
     const response = await fetch(`${server.baseUrl}/study-answer`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questionId: 10, optionIndex: 1 })
+      body: JSON.stringify({ questionId: 10, optionIndex: 1 }),
     });
     const payload = await response.json();
     const newState = server.fixture.db.readStudyState();
@@ -1143,18 +1166,18 @@ test('POST /study-answer does not auto-advance when queue is empty', async () =>
           options: ['A', 'B', 'C', 'D'],
           correctOptionIndex: 1,
           solved: index < 9,
-          selectedOptionIndex: index < 9 ? 1 : null
+          selectedOptionIndex: index < 9 ? 1 : null,
         })),
         correctCount: 9,
         completed: false,
-        generatedAt: '2026-03-17T00:00:00.000Z'
-      }
+        generatedAt: '2026-03-17T00:00:00.000Z',
+      },
     });
 
     const response = await fetch(`${server.baseUrl}/study-answer`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questionId: 10, optionIndex: 1 })
+      body: JSON.stringify({ questionId: 10, optionIndex: 1 }),
     });
     const payload = await response.json();
     const state = server.fixture.db.readStudyState();
@@ -1197,14 +1220,14 @@ test('POST /study-queue/organize reorders queue based on IA response', async () 
               message: {
                 content: JSON.stringify({
                   orderedIds: [3, 1, 2],
-                  rationale: 'Comecar por fundamentos e depois avançar.'
-                })
-              }
-            }
-          ]
+                  rationale: 'Comecar por fundamentos intercalando com vue e depois avançar.',
+                }),
+              },
+            },
+          ],
         };
-      }
-    })
+      },
+    }),
   });
 
   try {
@@ -1216,7 +1239,7 @@ test('POST /study-queue/organize reorders queue based on IA response', async () 
     const response = await fetch(`${server.baseUrl}/study-queue/organize`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({})
+      body: JSON.stringify({}),
     });
     const payload = await response.json();
 
@@ -1233,6 +1256,54 @@ test('POST /study-queue/organize reorders queue based on IA response', async () 
   }
 });
 
+test('POST /study-queue/organize alternates language and framework topics', async () => {
+  process.env.GROQ_API_KEY = 'test-key';
+  const server = await startTestServer({
+    fetchImpl: async () => ({
+      ok: true,
+      async json() {
+        return {
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({
+                  orderedIds: [1, 2, 3, 4],
+                  rationale: 'Intercalar linguagem e framework.',
+                }),
+              },
+            },
+          ],
+        };
+      },
+    }),
+  });
+
+  try {
+    server.fixture.db.enqueueStudy('javascript fundamentos');
+    server.fixture.db.enqueueStudy('typescript generics');
+    server.fixture.db.enqueueStudy('react hooks');
+    server.fixture.db.enqueueStudy('vue composables');
+
+    const queue = server.fixture.db.listQueue();
+    const response = await fetch(`${server.baseUrl}/study-queue/organize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    const payload = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.success, true);
+    assert.deepEqual(
+      payload.queue.map((item) => item.id),
+      [queue[0].id, queue[2].id, queue[1].id, queue[3].id]
+    );
+  } finally {
+    delete process.env.GROQ_API_KEY;
+    await server.close();
+  }
+});
+
 test('POST /study-queue/organize returns unchanged for queue with less than two items', async () => {
   const server = await startTestServer();
 
@@ -1241,7 +1312,7 @@ test('POST /study-queue/organize returns unchanged for queue with less than two 
     const response = await fetch(`${server.baseUrl}/study-queue/organize`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({})
+      body: JSON.stringify({}),
     });
     const payload = await response.json();
 
@@ -1264,13 +1335,13 @@ test('POST /study-queue/organize returns 500 when IA order is invalid', async ()
           choices: [
             {
               message: {
-                content: JSON.stringify({ orderedIds: [999, 1], rationale: 'ordem inválida' })
-              }
-            }
-          ]
+                content: JSON.stringify({ orderedIds: [999, 1], rationale: 'ordem inválida' }),
+              },
+            },
+          ],
         };
-      }
-    })
+      },
+    }),
   });
 
   try {
@@ -1280,7 +1351,7 @@ test('POST /study-queue/organize returns 500 when IA order is invalid', async ()
     const response = await fetch(`${server.baseUrl}/study-queue/organize`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({})
+      body: JSON.stringify({}),
     });
     const payload = await response.json();
 
@@ -1292,4 +1363,3 @@ test('POST /study-queue/organize returns 500 when IA order is invalid', async ()
     await server.close();
   }
 });
-
