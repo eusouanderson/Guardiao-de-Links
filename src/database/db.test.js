@@ -30,6 +30,7 @@ test('database: persists and reads study state', async () => {
   await withDb((db) => {
     db.writeStudyState({
       prompt: 'event loop',
+      difficulty: 'hard',
       updatedAt: '2026-01-01T00:00:00.000Z',
       lesson: null,
       completionCount: 2,
@@ -37,6 +38,7 @@ test('database: persists and reads study state', async () => {
 
     const state = db.readStudyState();
     assert.equal(state.prompt, 'event loop');
+    assert.equal(state.difficulty, 'hard');
     assert.equal(state.completionCount, 2);
   });
 });

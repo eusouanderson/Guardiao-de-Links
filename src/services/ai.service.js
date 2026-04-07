@@ -9,7 +9,7 @@ const {
 } = require('../utils/study.utils');
 
 const createAiService = ({ fetchImpl = fetch, groqModel = DEFAULT_GROQ_MODEL } = {}) => {
-  const generateStudyLesson = async (themePrompt) => {
+  const generateStudyLesson = async ({ themePrompt, difficulty }) => {
     const apiKey = getGroqApiKey();
     if (!apiKey) {
       throw new Error('GROQ_API_KEY não foi configurada no .env');
@@ -28,11 +28,11 @@ const createAiService = ({ fetchImpl = fetch, groqModel = DEFAULT_GROQ_MODEL } =
           {
             role: 'system',
             content:
-              'Você é um tutor didático em português do Brasil. Responda apenas com JSON válido, sem markdown. Estrutura: {"explanation":"texto","questions":[{"question":"texto","options":["opcao 1","opcao 2","opcao 3","opcao 4"],"correctOptionIndex":0}]}. Gere exatamente 10 perguntas objetivas de múltipla escolha com 4 opções cada e índice correto entre 0 e 3.',
+              'Você é um tutor didático em português do Brasil. Responda apenas com JSON válido, sem markdown. Estrutura: {"explanation":"texto","questions":[{"question":"texto","options":["opcao 1","opcao 2","opcao 3","opcao 4"],"correctOptionIndex":0}]}. Gere exatamente 10 perguntas objetivas de múltipla escolha com 4 opções cada e índice correto entre 0 e 3. Respeite o nível de dificuldade solicitado pelo usuário.',
           },
           {
             role: 'user',
-            content: `Explique o seguinte tema e crie 10 perguntas objetivas sobre ele: ${themePrompt}`,
+            content: `Explique o seguinte tema e crie 10 perguntas objetivas sobre ele no nível de dificuldade ${difficulty}: ${themePrompt}`,
           },
         ],
       }),
@@ -52,8 +52,9 @@ const createAiService = ({ fetchImpl = fetch, groqModel = DEFAULT_GROQ_MODEL } =
     let parsedContent;
     try {
       parsedContent = JSON.parse(extractJsonFromModel(content));
-    } catch {
-      throw new Error('A IA retornou um formato inválido para o estudo.');
+    } catch (err) {
+      const preview = content.slice(0, 200).replace(/\n/g, ' ');
+      throw new Error(`A IA retornou um formato inválido para o estudo. Preview: "${preview}"`);
     }
 
     const explanation =
@@ -65,6 +66,7 @@ const createAiService = ({ fetchImpl = fetch, groqModel = DEFAULT_GROQ_MODEL } =
     const questions = validateGeneratedQuestions(parsedContent.questions);
     return {
       promptSnapshot: themePrompt,
+      difficulty,
       explanation: explanation.trim(),
       questions,
       correctCount: 0,

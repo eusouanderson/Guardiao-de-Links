@@ -89,6 +89,49 @@
       box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
     }
 
+    .theme-controls {
+      display: grid;
+      gap: 0.75rem;
+      margin-top: 0.85rem;
+      grid-template-columns: minmax(0, 1fr) 220px;
+      align-items: end;
+    }
+
+    .difficulty-field {
+      display: grid;
+      gap: 0.4rem;
+    }
+
+    .difficulty-label {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .difficulty-select {
+      width: 100%;
+      padding: 0.75rem 0.85rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #1f2937;
+      background: white;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .difficulty-select:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    }
+
+    .difficulty-select:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      background: #f9fafb;
+    }
+
     .actions {
       margin-top: 0.85rem;
       display: flex;
@@ -627,6 +670,10 @@
     }
 
     @media (max-width: 640px) {
+      .theme-controls {
+        grid-template-columns: 1fr;
+      }
+
       .progress-head {
         flex-direction: column;
       }
@@ -660,6 +707,17 @@
 
     <textarea id="themeInput"
       placeholder="Ex.: quimica organica, regra de tres, idade media e revolucao francesa"></textarea>
+
+    <div class="theme-controls">
+      <div class="difficulty-field">
+        <label class="difficulty-label" for="difficultySelect">Nível de dificuldade das perguntas</label>
+        <select id="difficultySelect" class="difficulty-select">
+          <option value="easy">Fácil</option>
+          <option value="medium" selected>Médio</option>
+          <option value="hard">Difícil</option>
+        </select>
+      </div>
+    </div>
 
     <div class="actions">
       <button id="saveThemeBtn" type="button">Salvar temas</button>
@@ -701,6 +759,7 @@
 
   <script>
     const themeInput = document.getElementById('themeInput');
+    const difficultySelect = document.getElementById('difficultySelect');
     const statusEl = document.getElementById('status');
     const progressCardEl = document.getElementById('progressCard');
     const resultEl = document.getElementById('result');
@@ -713,12 +772,22 @@
     let currentSession = null;
     let toastTimer = null;
     let studying = false;
+    const DIFFICULTY_LABELS = {
+      easy: 'facil',
+      medium: 'medio',
+      hard: 'dificil'
+    };
+
+    function getDifficultyLabel(difficulty) {
+      return DIFFICULTY_LABELS[difficulty] || DIFFICULTY_LABELS.medium;
+    }
 
     function setUILocked(locked) {
       studying = locked;
       saveThemeBtn.disabled = locked;
       forceThemeBtn.disabled = locked;
       startStudyBtn.disabled = locked;
+      difficultySelect.disabled = locked;
       startStudyBtn.innerHTML = locked
         ? '<span class="spinner"></span> Gerando estudo...'
         : '🎓 Começar a estudar';
@@ -749,8 +818,11 @@
       updateSaveThemeState(data.status);
       if (data.prompt) {
         themeInput.value = data.prompt;
-        statusEl.textContent = `Tema salvo em: ${new Date(data.updatedAt).toLocaleString()}`;
+        const difficulty = data.difficulty || data.status?.difficulty || 'medium';
+        difficultySelect.value = difficulty;
+        statusEl.textContent = `Tema (${getDifficultyLabel(difficulty)}) salvo em: ${new Date(data.updatedAt).toLocaleString()}`;
       } else {
+        difficultySelect.value = 'medium';
         statusEl.textContent = 'Nenhum tema salvo ainda.';
       }
     }
@@ -894,6 +966,9 @@
 
     function renderSession(session) {
       currentSession = session;
+      if (session?.difficulty) {
+        difficultySelect.value = session.difficulty;
+      }
       updateSaveThemeState({
         canSaveNewTheme: !session || (session.completionCount || 0) >= 10,
         remainingCycles: Math.max(10 - (session?.completionCount || 0), 0)
@@ -905,6 +980,7 @@
 
     async function saveTheme() {
       const prompt = themeInput.value.trim();
+      const difficulty = difficultySelect.value;
       if (!prompt) {
         statusEl.textContent = 'Digite ao menos um tema para salvar.';
         return false;
@@ -914,7 +990,7 @@
       const response = await fetch('/study-theme', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt })
+        body: JSON.stringify({ prompt, difficulty })
       });
       const data = await response.json();
 
@@ -924,14 +1000,15 @@
       }
 
       if (data.queued) {
-        statusEl.textContent = `Tema enfileirado na posição ${data.position}.`;
-        showToast(`📋 Tema enfileirado na posição ${data.position}.`);
+        statusEl.textContent = `Tema (${getDifficultyLabel(difficulty)}) enfileirado na posição ${data.position}.`;
+        showToast(`📋 Tema (${getDifficultyLabel(difficulty)}) enfileirado na posição ${data.position}.`);
         await loadQueue();
         return false;
       }
 
+      difficultySelect.value = data.data.difficulty || difficulty;
       updateSaveThemeState(data.data.status);
-      statusEl.textContent = `Tema salvo em: ${new Date(data.data.updatedAt).toLocaleString()}`;
+      statusEl.textContent = `Tema (${getDifficultyLabel(data.data.difficulty || difficulty)}) salvo em: ${new Date(data.data.updatedAt).toLocaleString()}`;
       return true;
     }
 
@@ -954,6 +1031,7 @@
 
     async function forceTheme() {
       const prompt = themeInput.value.trim();
+      const difficulty = difficultySelect.value;
       if (!prompt) {
         statusEl.textContent = 'Digite ao menos um tema para forçar.';
         return;
@@ -962,16 +1040,17 @@
       const response = await fetch('/study-theme', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, force: true })
+        body: JSON.stringify({ prompt, difficulty, force: true })
       });
       const data = await response.json();
       if (!response.ok) {
         statusEl.textContent = data.error || 'Erro ao ativar tema.';
         return;
       }
+      difficultySelect.value = data.data.difficulty || difficulty;
       updateSaveThemeState(data.data.status);
-      statusEl.textContent = `Tema ativado em: ${new Date(data.data.updatedAt).toLocaleString()}`;
-      showToast('⚡ Tema ativado imediatamente!');
+      statusEl.textContent = `Tema (${getDifficultyLabel(data.data.difficulty || difficulty)}) ativado em: ${new Date(data.data.updatedAt).toLocaleString()}`;
+      showToast(`⚡ Tema (${getDifficultyLabel(data.data.difficulty || difficulty)}) ativado imediatamente!`);
       await loadQueue();
     }
 
@@ -981,7 +1060,7 @@
       renderQueue(queue);
     }
 
-    let queueHidden = false;
+    let queueHidden = true;
 
     document.getElementById('queueHeader').addEventListener('click', () => {
       queueHidden = !queueHidden;
@@ -1010,7 +1089,7 @@
         pos.textContent = index + 1;
         const promptSpan = document.createElement('span');
         promptSpan.className = 'queue-prompt';
-        promptSpan.textContent = item.prompt;
+        promptSpan.textContent = `[${getDifficultyLabel(item.difficulty)}] ${item.prompt}`;
 
         const controls = document.createElement('div');
         controls.className = 'queue-controls';

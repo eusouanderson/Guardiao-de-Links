@@ -3,6 +3,7 @@ const { REQUIRED_COMPLETION_COUNT } = require('../config/constants');
 const {
   buildSessionPayload,
   countCorrectAnswers,
+  normalizeStudyDifficulty,
   normalizeStudyState,
 } = require('../utils/study.utils');
 
@@ -33,6 +34,7 @@ const createStudyService = ({
       pendingStudy,
       canSaveNewTheme,
       prompt: studyState.prompt,
+      difficulty: normalizeStudyDifficulty(studyState.difficulty),
       updatedAt: studyState.updatedAt,
       completionCount,
       requiredCompletionCount,
@@ -46,11 +48,12 @@ const createStudyService = ({
     };
   };
 
-  const saveStudyTheme = (prompt) => {
+  const saveStudyTheme = ({ prompt, difficulty }) => {
     const currentState = readStudyState();
     const payload = {
       ...currentState,
       prompt,
+      difficulty: normalizeStudyDifficulty(difficulty),
       updatedAt: new Date().toISOString(),
       lesson: null,
       completionCount: 0,
@@ -60,12 +63,13 @@ const createStudyService = ({
     return payload;
   };
 
-  const saveOrQueueTheme = ({ prompt, force }) => {
+  const saveOrQueueTheme = ({ prompt, difficulty, force }) => {
     const currentState = readStudyState();
     const currentStatus = getStudyStatus(currentState);
+    const normalizedDifficulty = normalizeStudyDifficulty(difficulty);
 
     if (force || currentStatus.canSaveNewTheme) {
-      const saved = saveStudyTheme(prompt);
+      const saved = saveStudyTheme({ prompt, difficulty: normalizedDifficulty });
       return {
         statusCode: 200,
         payload: {
@@ -73,6 +77,7 @@ const createStudyService = ({
           activated: true,
           data: {
             prompt: saved.prompt,
+            difficulty: saved.difficulty,
             updatedAt: saved.updatedAt,
             status: getStudyStatus(saved),
           },
@@ -80,7 +85,7 @@ const createStudyService = ({
       };
     }
 
-    studyRepository.enqueueStudy(prompt);
+    studyRepository.enqueueStudy({ prompt, difficulty: normalizedDifficulty });
     const queue = studyRepository.listQueue();
     return {
       statusCode: 200,
@@ -109,7 +114,10 @@ const createStudyService = ({
       return { studyState, generated: false };
     }
 
-    const lesson = await aiService.generateStudyLesson(studyState.prompt);
+    const lesson = await aiService.generateStudyLesson({
+      themePrompt: studyState.prompt,
+      difficulty: normalizeStudyDifficulty(studyState.difficulty),
+    });
     const updatedState = {
       ...studyState,
       lesson,
@@ -177,16 +185,25 @@ const createStudyService = ({
     let advanced = false;
     let nextPrompt = null;
     if (justCompleted && studyState.completionCount >= requiredCompletionCount) {
+      const queueSnapshot = studyRepository.listQueue();
+      const nextQueuedItem = queueSnapshot[0] || null;
       const dequeued = studyRepository.dequeueNextStudy();
       if (dequeued) {
+        const nextPromptValue = typeof dequeued === 'string' ? dequeued : dequeued.prompt;
+        const nextDifficultyValue =
+          typeof dequeued === 'string'
+            ? nextQueuedItem?.difficulty
+            : dequeued.difficulty || nextQueuedItem?.difficulty;
+
         writeStudyState({
-          prompt: dequeued,
+          prompt: nextPromptValue,
+          difficulty: normalizeStudyDifficulty(nextDifficultyValue),
           updatedAt: new Date().toISOString(),
           lesson: null,
           completionCount: 0,
         });
         advanced = true;
-        nextPrompt = dequeued;
+        nextPrompt = nextPromptValue;
       }
     }
 

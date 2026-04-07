@@ -1,11 +1,13 @@
 // Study controller translates HTTP requests into study service calls.
 const { buildSessionPayload } = require('../utils/study.utils');
+const { normalizeStudyDifficulty } = require('../utils/study.utils');
 
 const createStudyController = ({ studyService, sendJson, parseJsonBody }) => {
   const getTheme = async (_req, res) => {
     const studyState = studyService.readStudyState();
     sendJson(res, 200, {
       prompt: studyState.prompt,
+      difficulty: studyState.difficulty,
       updatedAt: studyState.updatedAt,
       status: studyService.getStudyStatus(studyState),
     });
@@ -15,6 +17,7 @@ const createStudyController = ({ studyService, sendJson, parseJsonBody }) => {
     try {
       const parsed = await parseJsonBody(req);
       const prompt = typeof parsed.prompt === 'string' ? parsed.prompt.trim() : '';
+      const difficulty = normalizeStudyDifficulty(parsed.difficulty);
       const force = Boolean(parsed.force);
 
       if (!prompt) {
@@ -22,7 +25,7 @@ const createStudyController = ({ studyService, sendJson, parseJsonBody }) => {
         return;
       }
 
-      const result = studyService.saveOrQueueTheme({ prompt, force });
+      const result = studyService.saveOrQueueTheme({ prompt, difficulty, force });
       sendJson(res, result.statusCode, result.payload);
     } catch (error) {
       sendJson(res, 400, { error: 'Dados inválidos', details: error.message });

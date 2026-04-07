@@ -2,7 +2,7 @@
 const createStudyRepository = ({ db }) => ({
   readStudyState: () => db.readStudyState(),
   writeStudyState: (state) => db.writeStudyState(state),
-  enqueueStudy: (prompt) => db.enqueueStudy(prompt),
+  enqueueStudy: (item) => db.enqueueStudy(item),
   dequeueNextStudy: () => db.dequeueNextStudy(),
   listQueue: () => db.listQueue(),
   deleteFromQueue: (id) => db.deleteFromQueue(id),

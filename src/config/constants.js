@@ -5,6 +5,8 @@ const DEFAULT_PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const DEFAULT_GROQ_MODEL = 'openai/gpt-oss-120b';
 const REQUIRED_COMPLETION_COUNT = 10;
+const DEFAULT_STUDY_DIFFICULTY = 'medium';
+const STUDY_DIFFICULTIES = ['easy', 'medium', 'hard'];
 
 const MIME_TYPES = {
   '.css': 'text/css',
@@ -70,6 +72,8 @@ module.exports = {
   GROQ_API_URL,
   DEFAULT_GROQ_MODEL,
   REQUIRED_COMPLETION_COUNT,
+  DEFAULT_STUDY_DIFFICULTY,
+  STUDY_DIFFICULTIES,
   MIME_TYPES,
   LANGUAGE_KEYWORDS,
   FRAMEWORK_KEYWORDS,

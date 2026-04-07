@@ -1,7 +1,10 @@
 // Studies feature contracts for theme, queue, and session state.
+export type StudyDifficulty = 'easy' | 'medium' | 'hard';
+
 export interface StudyQueueItem {
   id: number;
   prompt: string;
+  difficulty: StudyDifficulty;
   createdAt: string;
 }
 
@@ -10,6 +13,7 @@ export interface StudyStatus {
   pendingStudy: boolean;
   canSaveNewTheme: boolean;
   prompt: string;
+  difficulty: StudyDifficulty;
   updatedAt: string | null;
   completionCount: number;
   remainingCycles: number;

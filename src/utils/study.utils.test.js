@@ -1,7 +1,11 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 
-const { normalizeQuestion, validateQueueOrder } = require('./study.utils');
+const {
+  normalizeQuestion,
+  normalizeStudyDifficulty,
+  validateQueueOrder,
+} = require('./study.utils');
 
 test('study utils: normalizeQuestion applies defaults', () => {
   const question = normalizeQuestion(null, 2);
@@ -14,4 +18,10 @@ test('study utils: validateQueueOrder validates id set', () => {
   const queue = [{ id: 1 }, { id: 2 }];
   assert.equal(validateQueueOrder([2, 1], queue), true);
   assert.equal(validateQueueOrder([2, 3], queue), false);
+});
+
+test('study utils: normalizeStudyDifficulty enforces valid values', () => {
+  assert.equal(normalizeStudyDifficulty('easy'), 'easy');
+  assert.equal(normalizeStudyDifficulty('HARD'), 'hard');
+  assert.equal(normalizeStudyDifficulty('invalid'), 'medium');
 });

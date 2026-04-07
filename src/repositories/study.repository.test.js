@@ -6,11 +6,17 @@ const { createStudyRepository } = require('./study.repository');
 test('study repository delegates queue calls to db adapter', () => {
   const calls = [];
   const db = {
-    readStudyState: () => ({ prompt: '', updatedAt: null, lesson: null, completionCount: 0 }),
+    readStudyState: () => ({
+      prompt: '',
+      difficulty: 'medium',
+      updatedAt: null,
+      lesson: null,
+      completionCount: 0,
+    }),
     writeStudyState: (state) => calls.push(['writeStudyState', state]),
-    enqueueStudy: (prompt) => calls.push(['enqueueStudy', prompt]),
+    enqueueStudy: (item) => calls.push(['enqueueStudy', item]),
     dequeueNextStudy: () => null,
-    listQueue: () => [{ id: 1, prompt: 'topic', createdAt: '2026-01-01' }],
+    listQueue: () => [{ id: 1, prompt: 'topic', difficulty: 'easy', createdAt: '2026-01-01' }],
     deleteFromQueue: (id) => calls.push(['deleteFromQueue', id]),
     moveQueueItem: (id, direction) => calls.push(['moveQueueItem', id, direction]),
     reorderQueue: (orderedIds) => calls.push(['reorderQueue', orderedIds]),
@@ -19,9 +25,9 @@ test('study repository delegates queue calls to db adapter', () => {
   };
 
   const repository = createStudyRepository({ db });
-  repository.enqueueStudy('javascript');
+  repository.enqueueStudy({ prompt: 'javascript', difficulty: 'hard' });
   const queue = repository.listQueue();
 
   assert.equal(queue.length, 1);
-  assert.deepEqual(calls[0], ['enqueueStudy', 'javascript']);
+  assert.deepEqual(calls[0], ['enqueueStudy', { prompt: 'javascript', difficulty: 'hard' }]);
 });

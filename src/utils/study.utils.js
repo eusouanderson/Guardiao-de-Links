@@ -1,12 +1,27 @@
 // Pure study-session helpers used by services and tests.
-const { FRAMEWORK_KEYWORDS, LANGUAGE_KEYWORDS } = require('../config/constants');
+const {
+  DEFAULT_STUDY_DIFFICULTY,
+  FRAMEWORK_KEYWORDS,
+  LANGUAGE_KEYWORDS,
+  STUDY_DIFFICULTIES,
+} = require('../config/constants');
 
 const createEmptyStudyState = () => ({
   prompt: '',
+  difficulty: DEFAULT_STUDY_DIFFICULTY,
   updatedAt: null,
   lesson: null,
   completionCount: 0,
 });
+
+const normalizeStudyDifficulty = (difficulty) => {
+  if (typeof difficulty !== 'string') {
+    return DEFAULT_STUDY_DIFFICULTY;
+  }
+
+  const normalized = difficulty.trim().toLowerCase();
+  return STUDY_DIFFICULTIES.includes(normalized) ? normalized : DEFAULT_STUDY_DIFFICULTY;
+};
 
 const normalizeQuestion = (question, index) => {
   const options = Array.isArray(question?.options)
@@ -62,6 +77,7 @@ const normalizeStudyState = (parsed) => {
 
   return {
     prompt: typeof parsed.prompt === 'string' ? parsed.prompt : '',
+    difficulty: normalizeStudyDifficulty(parsed.difficulty),
     updatedAt: parsed.updatedAt || null,
     lesson: normalizeLesson(parsed.lesson),
     completionCount: Number.isInteger(parsed.completionCount) ? parsed.completionCount : 0,
@@ -75,6 +91,7 @@ const buildSessionPayload = (studyState) => {
 
   return {
     prompt: studyState.prompt,
+    difficulty: normalizeStudyDifficulty(studyState.difficulty),
     updatedAt: studyState.updatedAt,
     explanation: lesson?.explanation || '',
     generatedAt: lesson?.generatedAt || null,
@@ -96,8 +113,21 @@ const buildSessionPayload = (studyState) => {
 
 const extractJsonFromModel = (content) => {
   const trimmed = content.trim();
+
+  // 1. Try fenced code block first
   const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  return fencedMatch ? fencedMatch[1].trim() : trimmed;
+  if (fencedMatch) {
+    return fencedMatch[1].trim();
+  }
+
+  // 2. Try to extract the outermost JSON object { ... }
+  const firstBrace = trimmed.indexOf('{');
+  const lastBrace = trimmed.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    return trimmed.slice(firstBrace, lastBrace + 1);
+  }
+
+  return trimmed;
 };
 
 const validateGeneratedQuestions = (questions) => {
@@ -240,4 +270,5 @@ module.exports = {
   validateQueueOrder,
   classifyStudyPrompt,
   interleaveLanguageAndFramework,
+  normalizeStudyDifficulty,
 };
