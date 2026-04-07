@@ -10,14 +10,43 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
     :root {
-      --bg-start: #0f172a;
-      --bg-end: #1d4ed8;
-      --card: rgba(255, 255, 255, 0.95);
-      --text: #111827;
-      --muted: #4b5563;
-      --accent: #0ea5e9;
-      --ok: #10b981;
-      --line: #e5e7eb;
+      --bg-primary: #0F172A;
+      --bg-alt: #111827;
+      --bg-surface: #1E293B;
+      --surface-card: rgba(30, 41, 59, 0.92);
+      --surface-soft: #1E293B;
+      --surface-muted: #1F2937;
+      --text-primary: #E2E8F0;
+      --text-secondary: #CBD5E1;
+      --text-muted: rgba(203, 213, 225, 0.82);
+      --text-subtle: rgba(203, 213, 225, 0.68);
+      --text-disabled: rgba(203, 213, 225, 0.52);
+      --color-primary: #3B82F6;
+      --color-primary-hover: #60A5FA;
+      --color-primary-active: #2563EB;
+      --color-primary-soft: rgba(59, 130, 246, 0.16);
+      --color-primary-border: rgba(96, 165, 250, 0.42);
+      --color-success: #22C55E;
+      --color-success-active: #16A34A;
+      --color-warning: #EAB308;
+      --color-warning-soft: rgba(234, 179, 8, 0.16);
+      --color-warning-border: rgba(250, 204, 21, 0.45);
+      --color-secondary: #F97316;
+      --color-error: #EF4444;
+      --color-error-soft: rgba(239, 68, 68, 0.18);
+      --color-error-border: rgba(239, 68, 68, 0.44);
+      --color-optional: #8B5CF6;
+      --color-info: #38BDF8;
+      --border-primary: #334155;
+      --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.28);
+      --bg-start: var(--bg-primary);
+      --bg-end: var(--bg-alt);
+      --card: var(--surface-card);
+      --text: var(--text-primary);
+      --muted: var(--text-muted);
+      --accent: var(--color-primary);
+      --ok: var(--color-success);
+      --line: var(--border-primary);
     }
 
     * {
@@ -32,7 +61,7 @@
       padding: 1.5rem;
       background:
         radial-gradient(circle at 15% 10%, rgba(14, 165, 233, 0.2), transparent 40%),
-        radial-gradient(circle at 90% 85%, rgba(16, 185, 129, 0.16), transparent 35%),
+        radial-gradient(circle at 90% 85%, rgba(34, 197, 94, 0.16), transparent 35%),
         linear-gradient(135deg, var(--bg-start), var(--bg-end));
       color: var(--text);
       display: flex;
@@ -44,6 +73,7 @@
       width: 100%;
       max-width: 980px;
       background: var(--card);
+      border: 1px solid var(--line);
       border-radius: 24px;
       padding: 2rem;
       box-shadow: 0 30px 60px -20px rgba(2, 6, 23, 0.55);
@@ -93,18 +123,18 @@
     }
 
     .btn-back {
-      background: #e2e8f0;
-      color: #0f172a;
+      background: var(--surface-soft);
+      color: var(--bg-primary);
     }
 
     .btn-study {
-      background: #dbeafe;
-      color: #1e3a8a;
+      background: var(--color-primary-soft);
+      color: var(--color-primary-active);
     }
 
     .btn-refresh {
-      background: linear-gradient(135deg, #0ea5e9, #2563eb);
-      color: white;
+      background: linear-gradient(135deg, var(--color-primary-hover), var(--color-primary-active));
+      color: var(--text-primary);
       box-shadow: 0 10px 18px -10px rgba(37, 99, 235, 0.8);
     }
 
@@ -124,7 +154,7 @@
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 0.9rem;
-      background: #f8fafc;
+      background: var(--surface-soft);
     }
 
     .stat-label {
@@ -136,7 +166,7 @@
     .stat-value {
       font-size: 1.4rem;
       font-weight: 700;
-      color: #0f172a;
+      color: var(--bg-primary);
     }
 
     #historyList {
@@ -151,7 +181,7 @@
       border: 1px solid var(--line);
       border-radius: 14px;
       padding: 0.95rem;
-      background: white;
+      background: var(--bg-surface);
     }
 
     .history-head {
@@ -168,8 +198,8 @@
       gap: 0.4rem;
       padding: 0.28rem 0.62rem;
       border-radius: 999px;
-      background: #ecfeff;
-      color: #0e7490;
+      background: var(--color-primary-soft);
+      color: var(--color-info);
       font-size: 0.78rem;
       font-weight: 700;
       text-transform: uppercase;
@@ -198,17 +228,17 @@
       margin-top: 0.6rem;
       padding-top: 0.6rem;
       border-top: 1px dashed var(--line);
-      color: #374151;
+      color: var(--text-secondary);
       line-height: 1.55;
       white-space: pre-wrap;
       overflow-wrap: anywhere;
     }
 
     .empty {
-      border: 1px dashed #93c5fd;
+      border: 1px dashed var(--color-primary-border);
       border-radius: 14px;
-      background: #eff6ff;
-      color: #1e3a8a;
+      background: var(--color-primary-soft);
+      color: var(--color-primary-active);
       padding: 1rem;
       line-height: 1.5;
     }

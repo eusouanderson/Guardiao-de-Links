@@ -10,6 +10,42 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
+    :root {
+      --bg-primary: #0F172A;
+      --bg-alt: #111827;
+      --bg-surface: #1E293B;
+      --surface-card: rgba(30, 41, 59, 0.92);
+      --surface-soft: #1E293B;
+      --surface-muted: #1F2937;
+      --text-primary: #E2E8F0;
+      --text-secondary: #CBD5E1;
+      --text-muted: rgba(203, 213, 225, 0.82);
+      --text-subtle: rgba(203, 213, 225, 0.68);
+      --text-disabled: rgba(203, 213, 225, 0.52);
+      --color-primary: #3B82F6;
+      --color-primary-hover: #60A5FA;
+      --color-primary-active: #2563EB;
+      --color-primary-soft: rgba(59, 130, 246, 0.16);
+      --color-primary-border: rgba(96, 165, 250, 0.42);
+      --color-success: #22C55E;
+      --color-success-active: #16A34A;
+      --color-success-soft: rgba(34, 197, 94, 0.18);
+      --color-success-border: rgba(74, 222, 128, 0.46);
+      --color-warning: #EAB308;
+      --color-warning-alt: #FACC15;
+      --color-warning-dark: #CA8A04;
+      --color-warning-soft: rgba(234, 179, 8, 0.16);
+      --color-warning-border: rgba(250, 204, 21, 0.45);
+      --color-secondary: #F97316;
+      --color-error: #EF4444;
+      --color-error-soft: rgba(239, 68, 68, 0.18);
+      --color-error-border: rgba(239, 68, 68, 0.44);
+      --color-optional: #8B5CF6;
+      --color-info: #38BDF8;
+      --border-primary: #334155;
+      --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.28);
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -22,23 +58,25 @@
         -apple-system,
         BlinkMacSystemFont,
         sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(145deg, var(--bg-primary) 0%, var(--bg-alt) 56%, var(--bg-surface) 100%);
       min-height: 100vh;
       padding: 1.5rem;
       display: flex;
       align-items: center;
       justify-content: center;
+      color: var(--text-primary);
     }
 
     .container {
       width: 100%;
       max-width: 600px;
-      background: rgba(255, 255, 255, 0.95);
+      background: var(--surface-card);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       border-radius: 24px;
       padding: 2rem;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-primary);
+      box-shadow: 0 24px 52px -24px rgba(2, 6, 23, 0.75);
       animation: slideUp 0.5s ease-out;
     }
 
@@ -58,7 +96,7 @@
       font-size: 2rem;
       font-weight: 700;
       margin-bottom: 1.5rem;
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: linear-gradient(135deg, var(--color-primary), var(--color-optional));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -73,30 +111,30 @@
     .form-group input {
       width: 100%;
       padding: 1rem 1.25rem;
-      border: 2px solid #e5e7eb;
+      border: 2px solid var(--border-primary);
       border-radius: 16px;
       font-size: 1rem;
       font-family: 'Inter', sans-serif;
       transition: all 0.2s ease;
-      background: white;
+      background: var(--bg-surface);
       outline: none;
     }
 
     .form-group input:focus {
-      border-color: #667eea;
-      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+      border-color: var(--color-primary);
+      box-shadow: var(--focus-ring);
     }
 
     .form-group input::placeholder {
-      color: #9ca3af;
+      color: var(--text-disabled);
       font-weight: 300;
     }
 
     button[type='submit'] {
       width: 100%;
       padding: 1rem;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-optional));
+      color: var(--text-primary);
       border: none;
       border-radius: 16px;
       font-size: 1rem;
@@ -104,12 +142,12 @@
       cursor: pointer;
       transition: all 0.2s ease;
       margin-top: 0.5rem;
-      box-shadow: 0 4px 6px -1px rgba(102, 126, 234, 0.2);
+      box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
     }
 
     button[type='submit']:hover {
       transform: translateY(-2px);
-      box-shadow: 0 10px 15px -3px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
     }
 
     button[type='submit']:active {
@@ -123,18 +161,18 @@
       margin-top: 0.75rem;
       padding: 0.9rem 1rem;
       border-radius: 16px;
-      background: #f3f4f6;
-      color: #374151;
+      background: var(--surface-muted);
+      color: var(--text-secondary);
       text-decoration: none;
       font-weight: 600;
       transition: all 0.2s ease;
-      border: 2px solid #e5e7eb;
+      border: 2px solid var(--border-primary);
     }
 
     .study-nav:hover {
-      background: white;
-      border-color: #667eea;
-      color: #667eea;
+      background: var(--bg-surface);
+      border-color: var(--color-primary);
+      color: var(--color-primary);
       transform: translateY(-2px);
     }
 
@@ -143,9 +181,9 @@
       margin: 0 0 1.25rem;
       padding: 1rem;
       border-radius: 16px;
-      background: #eef2ff;
-      border: 2px solid #c7d2fe;
-      color: #3730a3;
+      background: var(--color-primary-soft);
+      border: 2px solid var(--color-primary-border);
+      color: var(--color-primary-active);
     }
 
     .study-alert strong {
@@ -154,7 +192,7 @@
     }
 
     .study-alert a {
-      color: #4338ca;
+      color: var(--color-primary-active);
       font-weight: 600;
       text-decoration: none;
     }
@@ -181,17 +219,17 @@
     #searchInput {
       width: 100%;
       padding: 1rem 1rem 1rem 3rem;
-      border: 2px solid #e5e7eb;
+      border: 2px solid var(--border-primary);
       border-radius: 16px;
       font-size: 1rem;
       font-family: 'Inter', sans-serif;
       transition: all 0.2s ease;
-      background: white;
+      background: var(--bg-surface);
     }
 
     #searchInput:focus {
-      border-color: #667eea;
-      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+      border-color: var(--color-primary);
+      box-shadow: var(--focus-ring);
       outline: none;
     }
 
@@ -205,16 +243,16 @@
     .links-header h2 {
       font-size: 1.25rem;
       font-weight: 600;
-      color: #374151;
+      color: var(--text-secondary);
     }
 
     .link-count {
-      background: #e5e7eb;
+      background: var(--border-primary);
       padding: 0.25rem 0.75rem;
       border-radius: 9999px;
       font-size: 0.875rem;
       font-weight: 500;
-      color: #4b5563;
+      color: var(--text-muted);
     }
 
     #linksList {
@@ -231,12 +269,12 @@
     }
 
     #linksList::-webkit-scrollbar-track {
-      background: #f1f1f1;
+      background: var(--surface-muted);
       border-radius: 10px;
     }
 
     #linksList::-webkit-scrollbar-thumb {
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: linear-gradient(135deg, var(--color-primary), var(--color-optional));
       border-radius: 10px;
     }
 
@@ -244,7 +282,7 @@
       display: flex;
       align-items: center;
       padding: 0.75rem;
-      background: #f9fafb;
+      background: var(--surface-soft);
       border-radius: 16px;
       transition: all 0.2s ease;
       border: 2px solid transparent;
@@ -264,16 +302,16 @@
     }
 
     .link-item:hover {
-      border-color: #667eea;
-      background: white;
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+      border-color: var(--color-primary);
+      background: var(--bg-surface);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
     }
 
     .favicon-container {
       width: 40px;
       height: 40px;
       border-radius: 12px;
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: linear-gradient(135deg, var(--color-primary), var(--color-optional));
       display: flex;
       align-items: center;
       justify-content: center;
@@ -286,11 +324,11 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      background: white;
+      background: var(--bg-surface);
     }
 
     .favicon-container .favicon-placeholder {
-      color: white;
+      color: var(--text-primary);
       font-size: 1.25rem;
       font-weight: 600;
       text-transform: uppercase;
@@ -302,7 +340,7 @@
 
     .link-info a {
       font-weight: 600;
-      color: #1f2937;
+      color: var(--text-primary);
       text-decoration: none;
       font-size: 1rem;
       display: block;
@@ -311,12 +349,12 @@
     }
 
     .link-info a:hover {
-      color: #667eea;
+      color: var(--color-primary);
     }
 
     .link-url-preview {
       font-size: 0.75rem;
-      color: #6b7280;
+      color: var(--text-subtle);
       max-width: 200px;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -327,8 +365,8 @@
       width: 36px;
       height: 36px;
       border-radius: 10px;
-      background: #fee2e2;
-      color: #ef4444;
+      background: var(--color-error-soft);
+      color: var(--color-error);
       border: none;
       font-size: 1.25rem;
       cursor: pointer;
@@ -340,18 +378,18 @@
     }
 
     .delete-btn:hover {
-      background: #ef4444;
-      color: white;
+      background: var(--color-error);
+      color: var(--text-primary);
       transform: scale(1.05);
     }
 
     .empty-state {
       text-align: center;
       padding: 3rem 1rem;
-      color: #9ca3af;
-      background: #f9fafb;
+      color: var(--text-disabled);
+      background: var(--surface-soft);
       border-radius: 16px;
-      border: 2px dashed #e5e7eb;
+      border: 2px dashed var(--border-primary);
     }
 
     .empty-state p {
