@@ -5,85 +5,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" href="link-da-web.png" type="image/png" />
+  <link rel="stylesheet" href="/styles/global.css" />
   <title>Mentor Paulo Freire</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-    :root {
-      --bg-primary: #0F172A;
-      --bg-alt: #111827;
-      --bg-surface: #1E293B;
-      --surface-card: rgba(30, 41, 59, 0.92);
-      --surface-soft: #1E293B;
-      --surface-muted: #1F2937;
-      --text-primary: #E2E8F0;
-      --text-secondary: #CBD5E1;
-      --text-muted: rgba(203, 213, 225, 0.82);
-      --text-subtle: rgba(203, 213, 225, 0.68);
-      --text-disabled: rgba(203, 213, 225, 0.52);
-      --color-primary: #3B82F6;
-      --color-primary-hover: #60A5FA;
-      --color-primary-active: #2563EB;
-      --color-primary-soft: rgba(59, 130, 246, 0.16);
-      --color-primary-border: rgba(96, 165, 250, 0.42);
-      --color-success: #22C55E;
-      --color-success-active: #16A34A;
-      --color-warning: #EAB308;
-      --color-warning-soft: rgba(234, 179, 8, 0.16);
-      --color-warning-border: rgba(250, 204, 21, 0.45);
-      --color-secondary: #F97316;
-      --color-error: #EF4444;
-      --color-error-soft: rgba(239, 68, 68, 0.18);
-      --color-error-border: rgba(239, 68, 68, 0.44);
-      --color-optional: #8B5CF6;
-      --border-primary: #334155;
-      --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.28);
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: linear-gradient(145deg, var(--bg-primary) 0%, var(--bg-alt) 56%, var(--bg-surface) 100%);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1.5rem;
-      color: var(--text-primary);
-    }
-
     .container {
-      width: 100%;
       max-width: 800px;
-      background: var(--surface-card);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      border-radius: 24px;
-      border: 1px solid var(--border-primary);
-      box-shadow: 0 24px 52px -24px rgba(2, 6, 23, 0.75);
       display: flex;
       flex-direction: column;
       height: calc(100vh - 3rem);
       max-height: 860px;
-      animation: slideUp 0.5s ease-out;
       overflow: hidden;
-    }
-
-    @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
     }
 
     .header {
