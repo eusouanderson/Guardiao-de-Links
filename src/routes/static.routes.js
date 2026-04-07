@@ -21,6 +21,11 @@ const createStaticRoutes = ({ staticController }) => {
       return true;
     }
 
+    if (route === '/mentor-freire' || route === '/mentor-freire.html') {
+      await staticController.serveHtml(res, 'mentor-freire.html');
+      return true;
+    }
+
     if (route === '/favicon.ico') {
       await staticController.serveStaticAsset(res, '/link-da-web.png');
       return true;

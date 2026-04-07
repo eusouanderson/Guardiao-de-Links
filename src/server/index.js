@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 
 const { DEFAULT_GROQ_MODEL, DEFAULT_PUBLIC_DIR } = require('../config/constants');
 const { createLinksController } = require('../controllers/links.controller');
+const { createMentorController } = require('../controllers/mentor.controller');
 const { createStaticController } = require('../controllers/static.controller');
 const { createStudyController } = require('../controllers/study.controller');
 const { createDatabase } = require('../database/db');
@@ -11,6 +12,7 @@ const { createLinksRepository } = require('../repositories/links.repository');
 const { createStudyRepository } = require('../repositories/study.repository');
 const { createRouter } = require('../routes');
 const { createLinksRoutes } = require('../routes/links.routes');
+const { createMentorRoutes } = require('../routes/mentor.routes');
 const { createStaticRoutes } = require('../routes/static.routes');
 const { createStudyRoutes } = require('../routes/study.routes');
 const { createAiService } = require('../services/ai.service');
@@ -34,12 +36,14 @@ const createApp = (options = {}) => {
   const studyService = createStudyService({ studyRepository, aiService });
 
   const linksController = createLinksController({ linksService, sendJson, parseJsonBody });
+  const mentorController = createMentorController({ aiService, sendJson, parseJsonBody });
   const studyController = createStudyController({ studyService, sendJson, parseJsonBody });
   const staticController = createStaticController({ publicDir, sendText });
 
   const router = createRouter({
     routeModules: [
       createStaticRoutes({ staticController }),
+      createMentorRoutes({ mentorController }),
       createStudyRoutes({ studyController }),
       createLinksRoutes({ linksController }),
     ],

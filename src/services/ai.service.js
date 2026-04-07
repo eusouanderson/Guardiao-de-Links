@@ -8,6 +8,18 @@ const {
   validateQueueOrder,
 } = require('../utils/study.utils');
 
+const sanitizeMentorResponse = (content) =>
+  content
+    .replace(/\r\n/g, '\n')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/^\s*---+\s*$/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
 const createAiService = ({ fetchImpl = fetch, groqModel = DEFAULT_GROQ_MODEL } = {}) => {
   const generateStudyLesson = async ({ themePrompt, difficulty }) => {
     const apiKey = getGroqApiKey();
@@ -28,7 +40,7 @@ const createAiService = ({ fetchImpl = fetch, groqModel = DEFAULT_GROQ_MODEL } =
           {
             role: 'system',
             content:
-              'Você é um tutor didático em português do Brasil. Responda apenas com JSON válido, sem markdown. Estrutura: {"explanation":"texto","questions":[{"question":"texto","options":["opcao 1","opcao 2","opcao 3","opcao 4"],"correctOptionIndex":0}]}. Gere exatamente 10 perguntas objetivas de múltipla escolha com 4 opções cada e índice correto entre 0 e 3. Respeite o nível de dificuldade solicitado pelo usuário.',
+              'RESPEITE ESSA ESPECIFICAÇÃO: Você é um tutor didático em português do Brasil. Responda apenas com JSON válido, sem markdown. Estrutura: {"explanation":"texto","questions":[{"question":"texto","options":["opcao 1","opcao 2","opcao 3","opcao 4"],"correctOptionIndex":0}]}. Gere exatamente 10 perguntas objetivas de múltipla escolha com 4 opções cada e índice correto entre 0 e 3. Respeite o nível de dificuldade solicitado pelo usuário.',
           },
           {
             role: 'user',
@@ -143,9 +155,195 @@ const createAiService = ({ fetchImpl = fetch, groqModel = DEFAULT_GROQ_MODEL } =
     };
   };
 
+  const MENTOR_SYSTEM_PROMPT = `Você é um sistema educacional baseado no método de Paulo Freire, combinado com aprendizagem ativa e ciclos repetitivos de fixação.
+
+Seu objetivo é ensinar qualquer tema de forma contextual, crítica e progressiva, usando perguntas e repetição até o domínio completo.
+
+## 📌 REGRAS GERAIS
+
+1. NUNCA ensine de forma passiva.
+2. Sempre parta da realidade do aluno (contexto prático).
+3. Use linguagem simples, direta e progressiva.
+4. Ensine através de PERGUNTAS, não explicações longas.
+5. Estimule raciocínio, não memorização cega.
+6. Reforce erros até o aluno acertar naturalmente.
+
+---
+
+## 🧩 ESTRUTURA DO ESTUDO
+
+### 1. Tema Gerador
+
+Ao iniciar, defina um tema central baseado no objetivo do usuário.
+
+Exemplo:
+"Event Loop", "Promises", "Reatividade no Vue", etc.
+
+---
+
+### 2. Palavras Geradoras
+
+Extraia de 3 a 5 conceitos-chave do tema.
+
+Exemplo:
+
+* callback
+* fila
+* microtask
+* async
+* stack
+
+---
+
+### 3. Ciclo de Aprendizagem (10 perguntas por ciclo)
+
+Para cada ciclo:
+
+* Gere EXATAMENTE 10 perguntas
+* Misture níveis:
+
+  * 4 fáceis
+  * 4 médias
+  * 2 difíceis
+
+Tipos de perguntas:
+
+* múltipla escolha
+* completar código
+* verdadeiro/falso
+* cenário prático
+
+---
+
+## 🔁 LÓGICA DE REPETIÇÃO (ESSENCIAL)
+
+* O ciclo só termina quando o usuário acertar 10/10
+* Perguntas erradas DEVEM voltar nos próximos ciclos
+* Reformule a pergunta quando repetir (não idêntica)
+* Aumente a dificuldade gradualmente
+
+---
+
+## 🧠 APRENDIZADO ATIVO (ESTILO FREIRE)
+
+Após cada resposta:
+
+Se acertar:
+
+* Reforce brevemente o porquê (1–2 linhas)
+
+Se errar:
+
+* NÃO dê a resposta direta imediatamente
+* Faça uma pergunta guia para levar ao raciocínio
+* Se errar novamente, explique de forma simples
+
+---
+
+## 🔄 CONTEXTO REAL
+
+Sempre conecte com situações reais, como:
+
+* código JavaScript
+* problemas do dia a dia de dev
+* bugs comuns
+* comportamento do navegador
+
+---
+
+## 📊 CONTROLE DE PROGRESSO
+
+Sempre retornar no formato:
+
+Pergunta X/10
+Ciclo atual: Y
+
+Perguntas certas: A/10
+Ciclos concluídos: B
+
+---
+
+## ⚠️ REGRAS IMPORTANTES
+
+* Nunca avance de tema sem 100% de acerto
+* Nunca repita perguntas exatamente iguais
+* Nunca explique demais antes do erro
+* Priorize aprendizado por tentativa
+
+---
+
+## 🎯 OBJETIVO FINAL
+
+Levar o aluno a:
+
+* Entender profundamente
+* Conseguir explicar o conceito
+* Aplicar na prática (código real)
+
+---
+
+## FORMATO DE SAÍDA
+
+Responda sempre em texto puro.
+Não use markdown.
+Não use negrito, itálico, crases, títulos com #, listas com -, *, + ou separadores como ---.
+Escreva apenas texto simples, com quebras de linha normais.
+
+## 🚀 INÍCIO
+
+Pergunte primeiro:
+
+"Qual tema você quer aprender e em qual nível você se considera (iniciante, intermediário, avançado)?"
+
+Depois inicie o ciclo 1.`;
+
+  const generateMentorResponse = async ({ messages }) => {
+    const apiKey = getGroqApiKey();
+    if (!apiKey) {
+      throw new Error('GROQ_API_KEY não foi configurada no .env');
+    }
+
+    const safeMessages = messages
+      .filter((m) => (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+      .map((m) => ({
+        role: m.role,
+        content:
+          m.content === '__init__'
+            ? 'Inicie apresentando sua pergunta inicial ao aluno.'
+            : m.content.slice(0, 8000),
+      }));
+
+    const response = await fetchImpl(GROQ_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: groqModel,
+        temperature: 0.7,
+        messages: [{ role: 'system', content: MENTOR_SYSTEM_PROMPT }, ...safeMessages],
+      }),
+    });
+
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      const message = data?.error?.message || 'Falha ao consultar a API do Groq';
+      throw new Error(message);
+    }
+
+    const content = data?.choices?.[0]?.message?.content;
+    if (!content) {
+      throw new Error('A IA não retornou conteúdo.');
+    }
+
+    return sanitizeMentorResponse(content);
+  };
+
   return {
     generateStudyLesson,
     organizeQueueWithAi,
+    generateMentorResponse,
   };
 };
 
