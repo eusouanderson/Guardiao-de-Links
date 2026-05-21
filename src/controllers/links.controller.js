@@ -1,4 +1,3 @@
-// Links controller maps HTTP payloads to links service operations.
 const createLinksController = ({ linksService, sendJson, parseJsonBody }) => {
   const getLinks = async (_req, res) => {
     const links = linksService.listLinks();

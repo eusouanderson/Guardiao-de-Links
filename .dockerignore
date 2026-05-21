@@ -6,3 +6,8 @@ node_modules
 *.pid
 coverage
 npm-debug.log
+src/data/linksaved.db
+src/data/linksaved.db-shm
+src/data/linksaved.db-wal
+src/data/links.json
+src/data/study-theme.json

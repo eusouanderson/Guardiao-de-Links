@@ -1,4 +1,3 @@
-// Study controller translates HTTP requests into study service calls.
 const { buildSessionPayload } = require('../utils/study.utils');
 const { normalizeStudyDifficulty } = require('../utils/study.utils');
 

@@ -1,5 +1,6 @@
 // Runtime History page component that binds UI to composables.
 import { onMounted } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.prod.js';
+import { marked } from 'https://cdn.jsdelivr.net/npm/marked@15/+esm';
 import { useDateFormatter } from '../shared/formatters/useDateFormatter.js';
 import { useHistory } from './useHistory.js';
 
@@ -10,6 +11,8 @@ export const createHistoryApp = () => ({
 
     onMounted(loadHistory);
 
+    const parseMarkdown = (text) => (text ? marked.parse(text) : '');
+
     return {
       history,
       isLoading,
@@ -17,6 +20,7 @@ export const createHistoryApp = () => ({
       stats,
       loadHistory,
       formatDateTime,
+      parseMarkdown,
     };
   },
   template: `
@@ -57,7 +61,7 @@ export const createHistoryApp = () => ({
           </div>
           <div class="prompt">{{ item.promptSnapshot }}</div>
           <div class="meta">Concluido em: {{ formatDateTime(item.completedAt) }}</div>
-          <div class="explanation">{{ item.explanation || '' }}</div>
+          <div class="explanation" v-html="parseMarkdown(item.explanation)"></div>
         </article>
       </div>
     </section>

@@ -1,4 +1,3 @@
-// Static controller is responsible for serving html pages and static assets.
 const fs = require('node:fs');
 const path = require('node:path');
 const { MIME_TYPES } = require('../config/constants');

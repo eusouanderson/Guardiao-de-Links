@@ -9,16 +9,7 @@ const {
 } = require('../utils/study.utils');
 
 const sanitizeMentorResponse = (content) =>
-  content
-    .replace(/\r\n/g, '\n')
-    .replace(/^#{1,6}\s+/gm, '')
-    .replace(/\*\*(.*?)\*\*/g, '$1')
-    .replace(/\*(.*?)\*/g, '$1')
-    .replace(/`([^`]+)`/g, '$1')
-    .replace(/^\s*[-*+]\s+/gm, '')
-    .replace(/^\s*---+\s*$/gm, '')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+  content.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
 
 const createAiService = ({ fetchImpl = fetch, groqModel = DEFAULT_GROQ_MODEL } = {}) => {
   const generateStudyLesson = async ({ themePrompt, difficulty }) => {
@@ -284,10 +275,12 @@ Levar o aluno a:
 
 ## FORMATO DE SAÍDA
 
-Responda sempre em texto puro.
-Não use markdown.
-Não use negrito, itálico, crases, títulos com #, listas com -, *, + ou separadores como ---.
-Escreva apenas texto simples, com quebras de linha normais.
+Use markdown para formatar suas respostas:
+- **negrito** para termos importantes
+- \`código inline\` para nomes de funções, variáveis e snippets curtos
+- Blocos de código cercados por três crases para exemplos maiores
+- Listas com - para enumerações
+- Títulos com ## para seções quando necessário
 
 ## 🚀 INÍCIO
 
@@ -340,10 +333,71 @@ Depois inicie o ciclo 1.`;
     return sanitizeMentorResponse(content);
   };
 
+  const buildSafeMessages = (messages) =>
+    messages
+      .filter((m) => (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+      .map((m) => ({
+        role: m.role,
+        content:
+          m.content === '__init__'
+            ? 'Inicie apresentando sua pergunta inicial ao aluno.'
+            : m.content.slice(0, 8000),
+      }));
+
+  async function* generateMentorResponseStream({ messages }) {
+    const apiKey = getGroqApiKey();
+    if (!apiKey) throw new Error('GROQ_API_KEY não foi configurada no .env');
+
+    const response = await fetchImpl(GROQ_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: groqModel,
+        temperature: 0.7,
+        stream: true,
+        messages: [{ role: 'system', content: MENTOR_SYSTEM_PROMPT }, ...buildSafeMessages(messages)],
+      }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      throw new Error(data?.error?.message || 'Falha ao consultar a API do Groq');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith('data: ')) continue;
+        const data = trimmed.slice(6);
+        if (data === '[DONE]') return;
+        try {
+          const chunk = JSON.parse(data);
+          const token = chunk.choices?.[0]?.delta?.content;
+          if (token) yield token;
+        } catch {}
+      }
+    }
+  }
+
   return {
     generateStudyLesson,
     organizeQueueWithAi,
     generateMentorResponse,
+    generateMentorResponseStream,
   };
 };
 

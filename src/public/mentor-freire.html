@@ -161,9 +161,55 @@
       border-radius: 18px;
       line-height: 1.6;
       font-size: 0.95rem;
-      white-space: pre-wrap;
       word-break: break-word;
     }
+
+    .bubble p { margin: 0 0 0.6rem; }
+    .bubble p:last-child { margin-bottom: 0; }
+
+    .bubble ul, .bubble ol {
+      padding-left: 1.4rem;
+      margin: 0 0 0.6rem;
+    }
+
+    .bubble li { margin-bottom: 0.2rem; }
+
+    .bubble code {
+      background: rgba(255,255,255,0.12);
+      padding: 0.1em 0.35em;
+      border-radius: 5px;
+      font-family: 'Fira Code', 'Courier New', monospace;
+      font-size: 0.88em;
+    }
+
+    .message.user .bubble code {
+      background: rgba(255,255,255,0.2);
+    }
+
+    .bubble pre {
+      background: rgba(0,0,0,0.25);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      overflow-x: auto;
+      margin: 0.5rem 0;
+    }
+
+    .bubble pre code {
+      background: none;
+      padding: 0;
+      font-size: 0.85em;
+    }
+
+    .bubble strong { font-weight: 700; }
+
+    .bubble h1, .bubble h2, .bubble h3 {
+      margin: 0.5rem 0 0.3rem;
+      font-weight: 700;
+    }
+
+    .bubble h1 { font-size: 1.05rem; }
+    .bubble h2 { font-size: 1rem; }
+    .bubble h3 { font-size: 0.95rem; }
 
     .message.assistant .bubble {
       background: var(--surface-muted);
@@ -370,6 +416,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
   <script>
     const chatArea = document.getElementById('chatArea');
     const userInput = document.getElementById('userInput');
@@ -394,7 +441,7 @@
       sendBtn.disabled = loading;
     };
 
-    const appendMessage = (role, content) => {
+    const createBubble = (role) => {
       const hint = document.getElementById('welcomeHint');
       if (hint) hint.remove();
 
@@ -407,12 +454,67 @@
 
       const bubble = document.createElement('div');
       bubble.className = 'bubble';
-      bubble.textContent = content;
 
       wrapper.appendChild(avatar);
       wrapper.appendChild(bubble);
       chatArea.appendChild(wrapper);
       scrollToBottom();
+      return bubble;
+    };
+
+    const appendMessage = (role, content) => {
+      const bubble = createBubble(role);
+      if (role === 'assistant') {
+        bubble.innerHTML = marked.parse(content);
+      } else {
+        bubble.textContent = content;
+      }
+    };
+
+    const streamIntoMessage = async (fetchBody) => {
+      const res = await fetch('/mentor-chat-stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fetchBody),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.details || data.error || 'Erro desconhecido');
+      }
+
+      hideTyping();
+      const bubble = createBubble('assistant');
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') return fullText;
+          try {
+            const token = JSON.parse(data);
+            if (typeof token === 'string') {
+              fullText += token;
+              bubble.innerHTML = marked.parse(fullText);
+              scrollToBottom();
+            }
+          } catch {}
+        }
+      }
+
+      return fullText;
     };
 
     const showTyping = () => {
@@ -453,21 +555,8 @@
       showTyping();
 
       try {
-        const res = await fetch('/mentor-chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages }),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.details || data.error || 'Erro desconhecido');
-        }
-
-        messages.push({ role: 'assistant', content: data.message });
-        hideTyping();
-        appendMessage('assistant', data.message);
+        const fullText = await streamIntoMessage({ messages });
+        messages.push({ role: 'assistant', content: fullText });
       } catch (err) {
         hideTyping();
         appendMessage('assistant', '⚠️ Erro ao contatar o mentor: ' + err.message);
@@ -482,18 +571,8 @@
       setLoading(true);
       showTyping();
       try {
-        const res = await fetch('/mentor-chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: [trigger] }),
-        });
-
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.details || data.error || 'Erro desconhecido');
-
-        messages = [trigger, { role: 'assistant', content: data.message }];
-        hideTyping();
-        appendMessage('assistant', data.message);
+        const fullText = await streamIntoMessage({ messages: [trigger] });
+        messages = [trigger, { role: 'assistant', content: fullText }];
       } catch (err) {
         hideTyping();
         appendMessage('assistant', '⚠️ Erro ao iniciar o mentor: ' + err.message);

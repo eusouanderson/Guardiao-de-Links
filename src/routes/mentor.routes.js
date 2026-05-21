@@ -6,6 +6,11 @@ const createMentorRoutes = ({ mentorController }) => {
       return true;
     }
 
+    if (route === '/mentor-chat-stream' && method === 'POST') {
+      await mentorController.chatStream(req, res);
+      return true;
+    }
+
     return false;
   };
 

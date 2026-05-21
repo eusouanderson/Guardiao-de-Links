@@ -364,9 +364,69 @@
     }
 
     #result {
-      white-space: pre-wrap;
       line-height: 1.6;
       color: var(--text-primary);
+    }
+
+    #result h1, #result h2, #result h3, #result h4 {
+      margin: 1rem 0 0.5rem;
+      color: var(--text-secondary);
+      font-weight: 700;
+    }
+
+    #result h1 { font-size: 1.2rem; }
+    #result h2 { font-size: 1.1rem; }
+    #result h3 { font-size: 1rem; }
+
+    #result p { margin: 0 0 0.75rem; }
+
+    #result ul, #result ol {
+      padding-left: 1.5rem;
+      margin: 0 0 0.75rem;
+    }
+
+    #result li { margin-bottom: 0.25rem; }
+
+    #result code {
+      background: var(--surface-muted);
+      padding: 0.1em 0.4em;
+      border-radius: 6px;
+      font-family: 'Fira Code', 'Courier New', monospace;
+      font-size: 0.9em;
+      color: var(--color-primary-active);
+    }
+
+    #result pre {
+      background: var(--surface-muted);
+      border: 1px solid var(--border-primary);
+      border-radius: 12px;
+      padding: 1rem;
+      overflow-x: auto;
+      margin: 0 0 0.75rem;
+    }
+
+    #result pre code {
+      background: none;
+      padding: 0;
+      font-size: 0.88rem;
+      color: var(--text-primary);
+    }
+
+    #result strong { color: var(--text-secondary); }
+
+    #result blockquote {
+      border-left: 3px solid var(--color-primary);
+      margin: 0 0 0.75rem;
+      padding: 0.5rem 1rem;
+      background: var(--color-primary-soft);
+      border-radius: 0 8px 8px 0;
+      color: var(--text-muted);
+    }
+
+    #result hr {
+      border: none;
+      border-top: 1px solid var(--border-primary);
+      margin: 1rem 0;
     }
 
     .quiz-list {
@@ -721,6 +781,7 @@
 
   <div id="toast"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
   <script>
     const themeInput = document.getElementById('themeInput');
     const difficultySelect = document.getElementById('difficultySelect');
@@ -736,6 +797,18 @@
     let currentSession = null;
     let toastTimer = null;
     let studying = false;
+    let typewriterGeneration = 0;
+
+    async function typewriterRender(element, text, generation) {
+      let i = 0;
+      const charsPerTick = 6;
+      while (i < text.length) {
+        if (typewriterGeneration !== generation) return;
+        i = Math.min(i + charsPerTick, text.length);
+        element.innerHTML = marked.parse(text.slice(0, i));
+        await new Promise(r => setTimeout(r, 14));
+      }
+    }
     const DIFFICULTY_LABELS = {
       easy: 'facil',
       medium: 'medio',
@@ -937,9 +1010,17 @@
         canSaveNewTheme: !session || (session.completionCount || 0) >= 10,
         remainingCycles: Math.max(10 - (session?.completionCount || 0), 0)
       });
-      resultEl.textContent = session?.explanation || 'Aguardando resposta...';
       renderProgress(session);
       renderQuiz(session);
+
+      const explanationText = session?.explanation;
+      if (explanationText) {
+        const gen = ++typewriterGeneration;
+        typewriterRender(resultEl, explanationText, gen);
+      } else {
+        typewriterGeneration++;
+        resultEl.textContent = 'Aguardando resposta...';
+      }
     }
 
     async function saveTheme() {
