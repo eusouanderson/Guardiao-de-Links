@@ -1,57 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
 :root {
-  --bg-primary: #0f172a;
-  --bg-alt: #111827;
-  --bg-surface: #1e293b;
-  --surface-card: rgba(30, 41, 59, 0.92);
-  --surface-soft: #1e293b;
-  --surface-muted: #1f2937;
-  --text-primary: #e2e8f0;
-  --text-secondary: #cbd5e1;
-  --text-muted: rgba(203, 213, 225, 0.82);
-  --text-subtle: rgba(203, 213, 225, 0.68);
-  --text-disabled: rgba(203, 213, 225, 0.52);
-  --color-primary: #3b82f6;
-  --color-primary-hover: #60a5fa;
-  --color-primary-active: #2563eb;
-  --color-primary-soft: rgba(59, 130, 246, 0.16);
-  --color-primary-border: rgba(96, 165, 250, 0.42);
-  --color-success: #22c55e;
-  --color-success-active: #16a34a;
-  --color-success-soft: rgba(34, 197, 94, 0.18);
-  --color-success-border: rgba(74, 222, 128, 0.46);
-  --color-warning: #eab308;
-  --color-warning-alt: #facc15;
-  --color-warning-dark: #ca8a04;
-  --color-warning-soft: rgba(234, 179, 8, 0.16);
-  --color-warning-border: rgba(250, 204, 21, 0.45);
-  --color-secondary: #f97316;
-  --color-error: #ef4444;
-  --color-error-soft: rgba(239, 68, 68, 0.18);
-  --color-error-border: rgba(239, 68, 68, 0.44);
-  --color-optional: #8b5cf6;
-  --color-info: #38bdf8;
-  --border-primary: #334155;
-  --focus-ring: 0 0 0 3px rgba(59, 130, 246, 0.28);
+  /* ── Backgrounds ─────────────────────────────────────────────────────────
+     Ligeiramente mais quentes que o azul-preto puro — menos fadiga visual
+     em sessões longas de leitura.                                          */
+  --bg-primary:   #0d1117;
+  --bg-alt:       #131a22;
+  --bg-surface:   #1b2538;
+  --surface-card: rgba(16, 23, 33, 0.96);
+  --surface-soft: #1b2538;
+  --surface-muted: #1f2d40;
+
+  /* ── Texto — branco quente-frio ──────────────────────────────────────────
+     Branco puro (#fff) em fundos escuros causa halação (o texto parece
+     pulsar). Um tom levemente quente-frio elimina esse efeito.             */
+  --text-primary:   #e8eef5;
+  --text-secondary: #c8d4e0;
+  --text-muted:     rgba(186, 202, 216, 0.82);
+  --text-subtle:    rgba(186, 202, 216, 0.65);
+  --text-disabled:  rgba(186, 202, 216, 0.42);
+
+  /* ── Azul — informação / foco ────────────────────────────────────────────
+     Associado ao processamento lógico e retenção de fatos. Cor âncora
+     para "o que preciso aprender".                                         */
+  --color-primary:        #5294e2;
+  --color-primary-hover:  #75aeec;
+  --color-primary-active: #2f72cb;
+  --color-primary-soft:   rgba(82, 148, 226, 0.14);
+  --color-primary-border: rgba(82, 148, 226, 0.36);
+
+  /* ── Verde — sucesso / crescimento ──────────────────────────────────────
+     Reforço positivo. O cérebro associa verde a "certo" de forma instintiva;
+     isso acelera a formação de memória procedural.                         */
+  --color-success:        #28d67c;
+  --color-success-active: #18a85c;
+  --color-success-soft:   rgba(40, 214, 124, 0.14);
+  --color-success-border: rgba(40, 214, 124, 0.38);
+
+  /* ── Âmbar — atenção / termos-chave ─────────────────────────────────────
+     O efeito "marca-texto" (highlighter) é o recurso de memória mais
+     estudado: aumenta retenção em 20-30% em leituras de material técnico.
+     Use <mark> no markdown para ativar esse efeito visualmente.            */
+  --color-warning:        #dfa020;
+  --color-warning-alt:    #f0bc30;
+  --color-warning-dark:   #b07800;
+  --color-warning-soft:   rgba(223, 160, 32, 0.14);
+  --color-warning-border: rgba(240, 188, 48, 0.40);
+
+  /* ── Laranja — ação secundária ───────────────────────────────────────── */
+  --color-secondary: #f07832;
+
+  /* ── Vermelho — erro / revisão necessária ────────────────────────────────
+     Alta excitação emocional melhora a codificação mnêmica — respostas
+     erradas marcadas em vermelho ficam mais gravadas na memória.           */
+  --color-error:        #e84848;
+  --color-error-soft:   rgba(232, 72, 72, 0.14);
+  --color-error-border: rgba(232, 72, 72, 0.38);
+
+  /* ── Roxo — conceitos avançados / criatividade ───────────────────────── */
+  --color-optional: #9868e0;
+
+  /* ── Ciano — metadados / info ────────────────────────────────────────── */
+  --color-info: #28c6d8;
+
+  /* ── Sistema ─────────────────────────────────────────────────────────── */
+  --border-primary: #253550;
+  --focus-ring: 0 0 0 3px rgba(82, 148, 226, 0.28);
+
+  /* ── Fontes ──────────────────────────────────────────────────────────────
+     Plus Jakarta Sans: humanista geométrica, x-height elevado, excelente
+     para leitura em telas — top-3 Google Fonts para UI/reading.
+     JetBrains Mono: projetada para reduzir fadiga ao ler código — caracteres
+     altos e distintos, zero ambiguidade entre 0/O/l/1/I.                  */
+  --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
 }
 
+/* ── Reset ──────────────────────────────────────────────────────────────── */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-html,
-body {
+html, body {
   min-height: 100%;
 }
 
+/* ── Base do corpo ───────────────────────────────────────────────────────── */
 body {
-  font-family:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.7;
+  letter-spacing: 0.012em;
   min-height: 100vh;
   padding: 1.5rem;
   display: flex;
@@ -61,18 +102,22 @@ body {
   background: linear-gradient(
     145deg,
     var(--bg-primary) 0%,
-    var(--bg-alt) 56%,
+    var(--bg-alt)     56%,
     var(--bg-surface) 100%
   );
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── Tema histórico ──────────────────────────────────────────────────────── */
 body.theme-history {
   background:
-    radial-gradient(circle at 15% 10%, rgba(14, 165, 233, 0.2), transparent 40%),
-    radial-gradient(circle at 90% 85%, rgba(34, 197, 94, 0.16), transparent 35%),
+    radial-gradient(circle at 15% 10%, rgba(40, 214, 124, 0.14), transparent 38%),
+    radial-gradient(circle at 90% 85%, rgba(82, 148, 226, 0.12), transparent 35%),
     linear-gradient(135deg, var(--bg-primary), var(--bg-alt));
 }
 
+/* ── Container card ──────────────────────────────────────────────────────── */
 .container {
   width: 100%;
   background: var(--surface-card);
@@ -82,10 +127,8 @@ body.theme-history {
   animation: slideUp 0.45s ease-out;
 }
 
-input,
-textarea,
-select,
-button {
+/* ── Inputs herdam a fonte ───────────────────────────────────────────────── */
+input, textarea, select, button {
   font: inherit;
 }
 
@@ -98,12 +141,32 @@ select:focus {
   box-shadow: var(--focus-ring);
 }
 
+/* ── Seleção de texto — âmbar para reforçar o "highlighter" ─────────────── */
+::selection {
+  background: rgba(223, 160, 32, 0.32);
+  color: var(--text-primary);
+}
+
+/* ── Mark — efeito marca-texto para termos-chave no markdown ─────────────── */
+mark {
+  background: rgba(223, 160, 32, 0.22);
+  color: var(--text-primary);
+  border-radius: 3px;
+  padding: 0.05em 0.25em;
+  border-bottom: 1.5px solid var(--color-warning-border);
+}
+
+/* ── Código global (herdam font-mono em todos os contextos) ──────────────── */
+code, kbd, samp, pre {
+  font-family: var(--font-mono);
+}
+
+/* ── Animação de entrada ─────────────────────────────────────────────────── */
 @keyframes slideUp {
   from {
     opacity: 0;
     transform: translateY(20px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
