@@ -56,6 +56,11 @@ const createStudyRoutes = ({ studyController }) => {
       return true;
     }
 
+    if (route === '/study-advance' && method === 'POST') {
+      await studyController.advanceStudy(req, res);
+      return true;
+    }
+
     return false;
   };
 

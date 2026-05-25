@@ -561,6 +561,27 @@
       box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3);
     }
 
+    #nextStudyBtn {
+      background: linear-gradient(135deg, var(--color-info, #06b6d4), var(--color-primary));
+      color: var(--text-primary);
+      box-shadow: 0 4px 6px -1px rgba(6, 182, 212, 0.25);
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    #nextStudyBtn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(6, 182, 212, 0.35);
+    }
+
+    #nextStudyBtn:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+      transform: none;
+      box-shadow: none;
+    }
+
     .queue-section {
       margin-top: 1rem;
       padding: 1rem 1.25rem;
@@ -759,6 +780,7 @@
       <button id="saveThemeBtn" type="button">Salvar temas</button>
       <button id="forceThemeBtn" type="button">⚡ Forçar agora</button>
       <button id="startStudyBtn" type="button">🎓 Começar a estudar</button>
+      <button id="nextStudyBtn" type="button">➡️ Próximo estudo</button>
     </div>
 
     <div id="status">Carregando tema salvo...</div>
@@ -805,9 +827,11 @@
     const saveThemeBtn = document.getElementById('saveThemeBtn');
     const forceThemeBtn = document.getElementById('forceThemeBtn');
     const startStudyBtn = document.getElementById('startStudyBtn');
+    const nextStudyBtn = document.getElementById('nextStudyBtn');
     const queueAiBtn = document.getElementById('queueAiBtn');
     const toastEl = document.getElementById('toast');
     let currentSession = null;
+    let currentQueue = [];
     let toastTimer = null;
     let studying = false;
     let typewriterGeneration = 0;
@@ -837,10 +861,24 @@
       saveThemeBtn.disabled = locked;
       forceThemeBtn.disabled = locked;
       startStudyBtn.disabled = locked;
+      nextStudyBtn.disabled = locked;
       difficultySelect.disabled = locked;
       startStudyBtn.innerHTML = locked
         ? '<span class="spinner"></span> Gerando estudo...'
         : '🎓 Começar a estudar';
+    }
+
+    function updateNextStudyBtn() {
+      const cycleComplete = currentSession?.progress?.completed === true;
+      const hasQueue = currentQueue.length > 0;
+      if (cycleComplete && hasQueue) {
+        nextStudyBtn.style.display = 'inline-flex';
+        const next = currentQueue[0];
+        const label = next?.prompt ? `➡️ Próximo: ${next.prompt.slice(0, 30)}${next.prompt.length > 30 ? '…' : ''}` : '➡️ Próximo estudo';
+        nextStudyBtn.textContent = label;
+      } else {
+        nextStudyBtn.style.display = 'none';
+      }
     }
 
     function showToast(message) {
@@ -1025,6 +1063,7 @@
       });
       renderProgress(session);
       renderQuiz(session);
+      updateNextStudyBtn();
 
       const explanationText = session?.explanation;
       if (explanationText) {
@@ -1115,7 +1154,9 @@
     async function loadQueue() {
       const response = await fetch('/study-queue');
       const queue = await response.json();
+      currentQueue = queue;
       renderQueue(queue);
+      updateNextStudyBtn();
     }
 
     let queueHidden = true;
@@ -1311,6 +1352,27 @@
         await loadStudySession();
       } catch (err) {
         resultEl.textContent = `Erro: ${err.message}`;
+        setUILocked(false);
+      }
+    });
+
+    nextStudyBtn.addEventListener('click', async () => {
+      if (studying) return;
+      try {
+        setUILocked(true);
+        const response = await fetch('/study-advance', { method: 'POST' });
+        const data = await response.json();
+        if (!response.ok) {
+          statusEl.textContent = data.error || 'Erro ao avançar para o próximo estudo.';
+          setUILocked(false);
+          return;
+        }
+        showToast(`➡️ Avançando para: "${data.nextPrompt}"`);
+        statusEl.textContent = `Próximo estudo: ${data.nextPrompt}`;
+        await loadQueue();
+        await loadStudySession();
+      } catch (err) {
+        statusEl.textContent = `Erro: ${err.message}`;
         setUILocked(false);
       }
     });

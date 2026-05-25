@@ -246,6 +246,38 @@ const createStudyService = ({
     };
   };
 
+  const advanceToNextStudy = () => {
+    const queue = studyRepository.listQueue();
+    if (!queue.length) {
+      return { statusCode: 400, payload: { error: 'Nenhum estudo na fila para avançar.' } };
+    }
+
+    const nextQueuedItem = queue[0];
+    const dequeued = studyRepository.dequeueNextStudy();
+    if (!dequeued) {
+      return { statusCode: 400, payload: { error: 'Não foi possível avançar para o próximo estudo.' } };
+    }
+
+    const nextPrompt = typeof dequeued === 'string' ? dequeued : dequeued.prompt;
+    const nextDifficulty =
+      typeof dequeued === 'string'
+        ? nextQueuedItem?.difficulty || 'medium'
+        : dequeued.difficulty || nextQueuedItem?.difficulty || 'medium';
+
+    writeStudyState({
+      prompt: nextPrompt,
+      difficulty: normalizeStudyDifficulty(nextDifficulty),
+      updatedAt: new Date().toISOString(),
+      lesson: null,
+      completionCount: 0,
+    });
+
+    return {
+      statusCode: 200,
+      payload: { success: true, nextPrompt, nextDifficulty },
+    };
+  };
+
   return {
     readStudyState,
     writeStudyState,
@@ -253,6 +285,7 @@ const createStudyService = ({
     saveOrQueueTheme,
     ensureStudySession,
     submitAnswer,
+    advanceToNextStudy,
     listQueue: () => studyRepository.listQueue(),
     deleteFromQueue: (id) => studyRepository.deleteFromQueue(id),
     moveQueueItem: (id, direction) => studyRepository.moveQueueItem(id, direction),

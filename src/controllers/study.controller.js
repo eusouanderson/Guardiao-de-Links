@@ -145,6 +145,11 @@ const createStudyController = ({ studyService, sendJson, parseJsonBody }) => {
     }
   };
 
+  const advanceStudy = async (_req, res) => {
+    const result = studyService.advanceToNextStudy();
+    sendJson(res, result.statusCode, result.payload);
+  };
+
   return {
     getTheme,
     saveTheme,
@@ -153,6 +158,7 @@ const createStudyController = ({ studyService, sendJson, parseJsonBody }) => {
     getSession,
     getExplanation,
     submitAnswer,
+    advanceStudy,
     getQueue,
     moveQueueItem,
     organizeQueue,
