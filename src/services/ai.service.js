@@ -296,19 +296,6 @@ Use markdown para formatar suas respostas:
 - Blocos de código cercados por três crases para exemplos maiores
 - Listas com - para enumerações
 
-## 🛑 MARCADOR OBRIGATÓRIO DE FIM DE MENSAGEM
-
-Toda mensagem sua deve terminar OBRIGATORIAMENTE com o marcador exato:
-
-\`[aguardando]\`
-
-Isso inclui:
-- Mensagens com perguntas → terminar com \`[aguardando]\`
-- Mensagens com feedback + próxima pergunta → terminar com \`[aguardando]\`
-- Mensagem inicial pedindo o tema → terminar com \`[aguardando]\`
-
-**NUNCA** escreva nada após \`[aguardando]\`. Esse marcador indica que você parou e está esperando o aluno.
-
 ## 🚀 INÍCIO
 
 Pergunte primeiro:
@@ -333,8 +320,7 @@ Depois inicie o ciclo 1 automaticamente.`;
       },
       body: JSON.stringify({
         model: groqModel,
-        temperature: 0.7,
-        stop: ['[aguardando]'],
+        temperature: 0.4,
         messages: [{ role: 'system', content: MENTOR_SYSTEM_PROMPT }, ...safeMessages],
       }),
     });
@@ -384,9 +370,8 @@ Depois inicie o ciclo 1 automaticamente.`;
       },
       body: JSON.stringify({
         model: groqModel,
-        temperature: 0.7,
+        temperature: 0.4,
         stream: true,
-        stop: ['[aguardando]'],
         messages: [{ role: 'system', content: MENTOR_SYSTEM_PROMPT }, ...buildSafeMessages(messages)],
       }),
     });

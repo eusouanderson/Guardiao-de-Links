@@ -471,8 +471,6 @@
       }
     };
 
-    const stripMarker = (text) => text.replace(/\[aguardando\]/gi, '').trimEnd();
-
     const streamIntoMessage = async (fetchBody) => {
       const res = await fetch('/mentor-chat-stream', {
         method: 'POST',
@@ -504,23 +502,19 @@
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
           const data = line.slice(6).trim();
-          if (data === '[DONE]') {
-            bubble.innerHTML = marked.parse(stripMarker(fullText));
-            scrollToBottom();
-            return stripMarker(fullText);
-          }
+          if (data === '[DONE]') return fullText;
           try {
             const token = JSON.parse(data);
             if (typeof token === 'string') {
               fullText += token;
-              bubble.innerHTML = marked.parse(stripMarker(fullText));
+              bubble.innerHTML = marked.parse(fullText);
               scrollToBottom();
             }
           } catch {}
         }
       }
 
-      return stripMarker(fullText);
+      return fullText;
     };
 
     const showTyping = () => {
