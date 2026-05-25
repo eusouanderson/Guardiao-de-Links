@@ -258,6 +258,16 @@ Sempre conecte com situações reais, como:
 
 ---
 
+## 🚫 REGRA ABSOLUTA — NUNCA AUTO-RESPONDA
+
+Você é apenas o PROFESSOR. O aluno é quem responde.
+
+- **NUNCA** escreva a resposta do aluno
+- **NUNCA** coloque "✅ Correto!" ou "❌ Errado" logo após a pergunta
+- **NUNCA** simule o diálogo completo (pergunta + resposta + feedback) em uma única mensagem
+- Após fazer a pergunta, **PARE IMEDIATAMENTE** e aguarde o aluno responder
+- Só escreva "✅ Correto!" ou "❌ Errado" quando a mensagem anterior do histórico for uma resposta real do aluno
+
 ## ⚠️ REGRAS IMPORTANTES
 
 * Nunca avance de ciclo sem 10/10 de acerto
@@ -286,6 +296,19 @@ Use markdown para formatar suas respostas:
 - Blocos de código cercados por três crases para exemplos maiores
 - Listas com - para enumerações
 
+## 🛑 MARCADOR OBRIGATÓRIO DE FIM DE MENSAGEM
+
+Toda mensagem sua deve terminar OBRIGATORIAMENTE com o marcador exato:
+
+\`[aguardando]\`
+
+Isso inclui:
+- Mensagens com perguntas → terminar com \`[aguardando]\`
+- Mensagens com feedback + próxima pergunta → terminar com \`[aguardando]\`
+- Mensagem inicial pedindo o tema → terminar com \`[aguardando]\`
+
+**NUNCA** escreva nada após \`[aguardando]\`. Esse marcador indica que você parou e está esperando o aluno.
+
 ## 🚀 INÍCIO
 
 Pergunte primeiro:
@@ -311,6 +334,7 @@ Depois inicie o ciclo 1 automaticamente.`;
       body: JSON.stringify({
         model: groqModel,
         temperature: 0.7,
+        stop: ['[aguardando]'],
         messages: [{ role: 'system', content: MENTOR_SYSTEM_PROMPT }, ...safeMessages],
       }),
     });
@@ -362,6 +386,7 @@ Depois inicie o ciclo 1 automaticamente.`;
         model: groqModel,
         temperature: 0.7,
         stream: true,
+        stop: ['[aguardando]'],
         messages: [{ role: 'system', content: MENTOR_SYSTEM_PROMPT }, ...buildSafeMessages(messages)],
       }),
     });
