@@ -8,6 +8,10 @@ pnpm-lock.yaml
 # Ignore Docker artifacts
 *.pid
 
+# Ignore SQLite WAL journal files
+*.db-shm
+*.db-wal
+
 # Ignore OS files
 .DS_Store
 Thumbs.db
