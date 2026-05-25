@@ -190,7 +190,7 @@ Exemplo:
 
 Para cada ciclo:
 
-* Gere EXATAMENTE 10 perguntas
+* Gere EXATAMENTE 10 perguntas numeradas (1 a 10)
 * Misture níveis:
 
   * 4 fáceis
@@ -208,10 +208,28 @@ Tipos de perguntas:
 
 ## 🔁 LÓGICA DE REPETIÇÃO (ESSENCIAL)
 
-* O ciclo só termina quando o usuário acertar 10/10
-* Perguntas erradas DEVEM voltar nos próximos ciclos
-* Reformule a pergunta quando repetir (não idêntica)
-* Aumente a dificuldade gradualmente
+* Um ciclo só termina quando o aluno acertar 10/10 perguntas
+* Perguntas erradas DEVEM voltar nos próximos ciclos reformuladas
+* Aumente a dificuldade gradualmente a cada ciclo
+
+---
+
+## 📊 CONTROLE DE PROGRESSO (OBRIGATÓRIO)
+
+**Antes de cada pergunta**, exiba sempre este cabeçalho:
+
+\`\`\`
+Ciclo {N} – Pergunta {X}/10
+Ciclo atual: {N}  Perguntas certas: {A}/10  Ciclos concluídos: {B}
+\`\`\`
+
+### Regras de contagem:
+- **Ciclo atual (N)**: começa em 1, incrementa +1 cada vez que o aluno acerta 10/10.
+- **Perguntas certas (A)**: conta somente as respostas corretas do ciclo atual. Reset para 0 ao iniciar novo ciclo.
+- **Ciclos concluídos (B)**: número de ciclos onde o aluno atingiu 10/10. Quando o aluno acerta a 10ª pergunta de um ciclo:
+  - Exiba: "🎉 Ciclo {N} concluído! Ciclos concluídos: {N}"
+  - **Incremente B imediatamente** (B = N)
+  - Inicie o próximo ciclo automaticamente sem perguntar
 
 ---
 
@@ -220,14 +238,13 @@ Tipos de perguntas:
 Após cada resposta:
 
 Se acertar:
-
 * Reforce brevemente o porquê (1–2 linhas)
+* Avance para a próxima pergunta imediatamente
 
 Se errar:
-
 * NÃO dê a resposta direta imediatamente
 * Faça uma pergunta guia para levar ao raciocínio
-* Se errar novamente, explique de forma simples
+* Se errar novamente, explique de forma simples e repita a pergunta reformulada
 
 ---
 
@@ -235,30 +252,18 @@ Se errar:
 
 Sempre conecte com situações reais, como:
 
-* código JavaScript
+* código do tema estudado
 * problemas do dia a dia de dev
 * bugs comuns
-* comportamento do navegador
-
----
-
-## 📊 CONTROLE DE PROGRESSO
-
-Sempre retornar no formato:
-
-Pergunta X/10
-Ciclo atual: Y
-
-Perguntas certas: A/10
-Ciclos concluídos: B
 
 ---
 
 ## ⚠️ REGRAS IMPORTANTES
 
-* Nunca avance de tema sem 100% de acerto
-* Nunca repita perguntas exatamente iguais
+* Nunca avance de ciclo sem 10/10 de acerto
+* Nunca repita perguntas exatamente iguais entre ciclos
 * Nunca explique demais antes do erro
+* Ao concluir um ciclo, inicie o próximo automaticamente
 * Priorize aprendizado por tentativa
 
 ---
@@ -280,7 +285,6 @@ Use markdown para formatar suas respostas:
 - \`código inline\` para nomes de funções, variáveis e snippets curtos
 - Blocos de código cercados por três crases para exemplos maiores
 - Listas com - para enumerações
-- Títulos com ## para seções quando necessário
 
 ## 🚀 INÍCIO
 
@@ -288,7 +292,7 @@ Pergunte primeiro:
 
 "Qual tema você quer aprender e em qual nível você se considera (iniciante, intermediário, avançado)?"
 
-Depois inicie o ciclo 1.`;
+Depois inicie o ciclo 1 automaticamente.`;
 
   const generateMentorResponse = async ({ messages }) => {
     const apiKey = getGroqApiKey();
@@ -296,15 +300,7 @@ Depois inicie o ciclo 1.`;
       throw new Error('GROQ_API_KEY não foi configurada no .env');
     }
 
-    const safeMessages = messages
-      .filter((m) => (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
-      .map((m) => ({
-        role: m.role,
-        content:
-          m.content === '__init__'
-            ? 'Inicie apresentando sua pergunta inicial ao aluno.'
-            : m.content.slice(0, 8000),
-      }));
+    const safeMessages = buildSafeMessages(messages);
 
     const response = await fetchImpl(GROQ_API_URL, {
       method: 'POST',
@@ -333,16 +329,24 @@ Depois inicie o ciclo 1.`;
     return sanitizeMentorResponse(content);
   };
 
-  const buildSafeMessages = (messages) =>
-    messages
+  const buildSafeMessages = (messages, maxRecent = 24) => {
+    const filtered = messages
       .filter((m) => (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
       .map((m) => ({
         role: m.role,
         content:
           m.content === '__init__'
             ? 'Inicie apresentando sua pergunta inicial ao aluno.'
-            : m.content.slice(0, 8000),
+            : m.content.slice(0, 4000),
       }));
+
+    if (filtered.length <= maxRecent) return filtered;
+
+    // Manter as 2 primeiras mensagens (inicio/contexto) + as (maxRecent - 2) mais recentes
+    const head = filtered.slice(0, 2);
+    const tail = filtered.slice(-(maxRecent - 2));
+    return [...head, ...tail];
+  };
 
   async function* generateMentorResponseStream({ messages }) {
     const apiKey = getGroqApiKey();
